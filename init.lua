@@ -79,6 +79,21 @@ for _, lsp in ipairs(servers) do
   }
 end
 
+-- Enable stubs for Python
+nvim_lsp['pyright'].setup {
+  settings = {
+    python = {
+      analysis = {
+        extraPaths = { vim.fn.expand("~/.stubs") },
+      },
+    },
+  },
+  on_attach = on_attach,
+  flags = {
+    debounce_text_changes = 150,
+  },
+}
+
 -- Enable TypeScript LSP for JavaScript files
 nvim_lsp['tsserver'].setup {
   on_attach = function(client, bufnr)
@@ -242,6 +257,3 @@ vim.api.nvim_set_keymap('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = tru
 
 -- LSP signature
 require('lsp_signature').setup()
-
--- GitHub Copilot
--- require('copilot').setup()

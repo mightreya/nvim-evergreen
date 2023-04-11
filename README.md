@@ -56,6 +56,14 @@ npm install -g pyright sourcekit omnisharp gopls typescript typescript-language-
 - LSP function signature help
 - Gruvbox color scheme
 
+### Nerd Font (optional)
+
+This configuration works best with a Nerd Font. We recommend using the 'FiraCode Nerd Font'. You can download it from the [Nerd Fonts repository](https://github.com/ryanoasis/nerd-fonts).
+
+1. Download the font from the [latest release](https://github.com/ryanoasis/nerd-fonts/releases) or by following the instructions in the repository.
+2. Install the font on your system by following the instructions for your specific operating system.
+3. Set your terminal emulator to use the installed Nerd Font.
+
 ## Customization
 
 Feel free to customize the configuration according to your preferences by editing the `init.lua` file in the `~/.config/nvim/` directory.
