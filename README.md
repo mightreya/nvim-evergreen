@@ -23,8 +23,19 @@ git clone https://github.com/yourusername/neovim-config.git ~/.config/nvim
 ```
 
 3. Install the required Node.js global packages for LSP servers:
+
 ```sh
 npm install -g pyright sourcekit omnisharp gopls typescript typescript-language-server vscode-html-languageserver-bin vscode-css-languageserver-bin tailwindcss-language-server vscode-json-languageserver
+```
+
+4. Install isort, black, and other formatting tools for Python:
+```sh
+pip install isort black
+```
+
+5. Install eslint for JavaScript formatting:
+```sh
+npm install -g eslint
 ```
 
 4. Open Neovim and run the following command to install the plugins:

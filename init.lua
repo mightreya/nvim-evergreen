@@ -135,6 +135,9 @@ require('luasnip/loaders/from_vscode').load()
 -- neoformat (auto-formatting)
 vim.cmd('autocmd BufWritePre * Neoformat')
 
+vim.g.neoformat_enabled_python = {'isort', 'black'}
+vim.g.neoformat_enabled_javascript = {'eslint'}
+
 -- vim-surround
 vim.g.surround_no_insert_mappings = 1
 
