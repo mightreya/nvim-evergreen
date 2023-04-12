@@ -38,12 +38,12 @@ pip install isort black
 npm install -g eslint
 ```
 
-4. Open Neovim and run the following command to install the plugins:
+6. Open Neovim and run the following command to install the plugins:
 ```vim
 :PackerInstall
 ```
 
-5. Restart Neovim and enjoy your new configuration!
+7. Restart Neovim and enjoy your new configuration!
 
 ## Features
 
