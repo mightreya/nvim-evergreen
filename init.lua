@@ -38,6 +38,8 @@ require('packer').startup(function()
   use 'ray-x/lsp_signature.nvim' -- Function signature help
   use 'github/copilot.vim' -- GitHub Copilot integration
   use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
+  use 'mfussenegger/nvim-jdtls' -- Java LSP (jdtls) support
+  use 'mfussenegger/nvim-dap' -- Debug Adapter Protocol (DAP) support
 end)
 
 -- General settings
@@ -111,6 +113,88 @@ nvim_lsp['tsserver'].setup {
     on_attach(client, bufnr)
   end
 }
+
+-- Java LSP (jdtls) setup
+local home_dir = os.getenv('HOME')
+local jdtls_path = home_dir .. '/Library/Java/Extensions/jdtls'
+
+_G.setup_java_lsp = function()
+  local jdtls_cmd = {
+      "java",
+      "-Declipse.application=org.eclipse.jdt.ls.core.id1",
+      "-Dosgi.bundles.defaultStartLevel=4",
+      "-Declipse.product=org.eclipse.jdt.ls.core.product",
+      "-Dlog.protocol=true",
+      "-Dlog.level=ALL",
+      "-Xms1g",
+      "-Xmx2G",
+      "-jar",
+      jdtls_path .. "/plugins/org.eclipse.equinox.launcher_1.6.400.v20210924-0641.jar",
+      "-configuration",
+      jdtls_path .. "/config_mac",
+      "-data",
+      vim.fn.stdpath('cache') .. "/lsp_workspace"
+  }
+
+  require('jdtls').start_or_attach({
+    cmd = jdtls_cmd,
+    on_attach = on_attach,
+  })
+end
+
+vim.cmd('autocmd FileType java lua setup_java_lsp()')
+
+
+-- Debug Adapter Protocol (DAP) setup
+local dap = require('dap')
+
+dap.adapters.java = function(callback, config)
+  local executable = 'java'
+  local cmd = {
+      "java",
+      "-jar",
+      jdtls_path .. "/plugins/org.eclipse.equinox.launcher_1.6.400.v20210924-0641.jar",
+      "-configuration",
+      jdtls_path .. "/config_mac",
+      "-data",
+      vim.fn.stdpath('cache') .. "/lsp_workspace"
+  }
+  
+  callback({ type = 'executable', command = executable, args = cmd })
+end
+
+dap.configurations.java = {
+  {
+    type = 'java';
+    name = 'Debug';
+    request = 'launch';
+    mainClass = '';
+    projectName = '';
+    cwd = '${workspaceFolder}';
+  },
+}
+
+-- Debugging keybindings
+vim.api.nvim_set_keymap('n', '<leader>dc', ':lua require("dap").continue()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>ds', ':lua require("dap").step_over()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>di', ':lua require("dap").step_into()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>du', ':lua require("dap").step_out()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>dr', ':lua require("dap").repl.toggle()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>ds', ':lua require("dap.ui.variables").scopes()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>dp', ':lua require("dap.ui.variables").visual_hover()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>de', ':lua require("dap").disconnect(); require("dap").close()<CR>', { noremap = true, silent = true })
+
+-- Run current test
+vim.api.nvim_set_keymap('n', '<leader>rt', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Run Test - Current File'})<CR>", {noremap = true, silent = true})
+
+-- Debug current test
+vim.api.nvim_set_keymap('n', '<leader>dt', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Debug (Launch) - Current File'})<CR>", {noremap = true, silent = true})
+
+-- Run all tests in the current file
+vim.api.nvim_set_keymap('n', '<leader>ra', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Run Test - Current File', mainClass = vim.fn.expand('%:p')})<CR>", {noremap = true, silent = true})
+
+-- Debug all tests in the current file
+vim.api.nvim_set_keymap('n', '<leader>da', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Debug (Launch) - Current File', mainClass = vim.fn.expand('%:p')})<CR>", {noremap = true, silent = true})
 
 -- nvim-cmp (autocompletion)
 local cmp = require'cmp'
@@ -243,7 +327,7 @@ vim.cmd('colorscheme gruvbox')
 -- Nvim-treesitter
 require('nvim-treesitter.configs').setup {
   ensure_installed = {
-    "bash", "c", "cpp", "c_sharp", "css", "go", "html", "javascript",
+    "java", "bash", "c", "cpp", "c_sharp", "css", "go", "html", "javascript",
     "json", "lua", "python", "rust", "swift", "typescript", "yaml"
   },
   highlight = {
