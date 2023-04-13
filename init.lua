@@ -53,6 +53,9 @@ vim.cmd('autocmd InsertLeave * :set nopaste') -- Disable paste mode on insert le
 vim.cmd('autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o') -- Remove comments continuation
 vim.cmd('autocmd BufRead,BufNewFile * setlocal textwidth=0') -- Disable automatic line break
 
+-- Sync buffers with the saved files on disk
+vim.cmd('autocmd FocusGained,BufEnter * :checktime')
+
 -- LSP settings
 local nvim_lsp = require('lspconfig')
 local on_attach = function(client, bufnr)
@@ -104,7 +107,7 @@ nvim_lsp['pyright'].setup {
 -- Enable TypeScript LSP for JavaScript files
 nvim_lsp['tsserver'].setup {
   on_attach = function(client, bufnr)
-    client.resolved_capabilities.document_formatting = false
+    client.server_capabilities.document_formatting = false
     on_attach(client, bufnr)
   end
 }
