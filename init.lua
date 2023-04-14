@@ -167,6 +167,7 @@ require('indent_blankline').setup {
 -- Telescope
 require('telescope').setup {
   defaults = {
+    path_display = {"shorten"},
     file_ignore_patterns = { "node_modules" },
   },
   extensions = {
