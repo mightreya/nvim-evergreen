@@ -36,8 +36,9 @@ require('packer').startup(function()
   use 'editorconfig/editorconfig-vim' -- EditorConfig support
   use 'vimwiki/vimwiki' -- Notes
   use 'ray-x/lsp_signature.nvim' -- Function signature help
-  use 'github/copilot.vim' -- GitHub Copilot integration
   use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
+  use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
+  use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
 end)
 
 -- General settings
@@ -112,6 +113,15 @@ nvim_lsp['tsserver'].setup {
   end
 }
 
+-- GitHub Copilot
+require("copilot").setup({
+  suggestion = { enabled = false },
+  panel = { enabled = false },
+})
+
+-- Copilot completion
+require("copilot_cmp").setup()
+
 -- nvim-cmp (autocompletion)
 local cmp = require'cmp'
 cmp.setup {
@@ -121,6 +131,8 @@ cmp.setup {
     end,
   },
   mapping = {
+    ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
+    ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-e>'] = cmp.mapping.close(),
     ['<C-y>'] = cmp.mapping.confirm({
@@ -129,6 +141,7 @@ cmp.setup {
     }),
   },
   sources = {
+    { name = "copilot" },
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
   },
@@ -270,4 +283,9 @@ vim.g.ale_lint_on_insert_leave = 0
 vim.api.nvim_set_keymap('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = true, silent = true })
 
 -- LSP signature
-require('lsp_signature').setup()
+require('lsp_signature').setup({
+  bind = false, -- Disable automatic binding
+})
+
+-- Add a custom keybinding to show the signature help window on demand
+vim.api.nvim_set_keymap('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { noremap = true, silent = true })
