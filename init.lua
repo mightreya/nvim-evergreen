@@ -122,6 +122,24 @@ require("copilot").setup({
 -- Copilot completion
 require("copilot_cmp").setup()
 
+-- LuaSnip (snippets)
+local ls = require'luasnip'
+local s = ls.s
+local t = ls.t
+
+ls.config.set_config {
+  history = true,
+  updateevents = 'TextChanged,TextChangedI',
+}
+
+ls.add_snippets("python", {
+	s("br", {
+		t({"import pdb; pdb.set_trace()"}),
+	})
+}, {
+	key = "python",
+})
+
 -- nvim-cmp (autocompletion)
 local cmp = require'cmp'
 cmp.setup {
@@ -139,21 +157,22 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     }),
+    ['<Tab>'] = function(fallback)
+        if vim.fn.pumvisible() == 1 then
+            vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<C-y>', true, true, true), 'n')
+        elseif require('luasnip').expand_or_jumpable() then
+            vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<Plug>luasnip-expand-or-jump', true, true, true), '')
+        else
+            fallback()
+        end
+    end,
   },
   sources = {
+    { name = 'luasnip', option = { use_show_condition = false } },
     { name = "copilot" },
     { name = 'nvim_lsp' },
-    { name = 'luasnip' },
   },
 }
-
--- LuaSnip (snippets)
-local ls = require'luasnip'
-ls.config.set_config {
-  history = true,
-  updateevents = 'TextChanged,TextChangedI',
-}
-require('luasnip/loaders/from_vscode').load()
 
 -- neoformat (auto-formatting)
 vim.cmd('autocmd BufWritePre * Neoformat')
@@ -161,6 +180,7 @@ vim.cmd('autocmd BufWritePre * Neoformat')
 vim.g.neoformat_enabled_python = {'isort', 'black'}
 vim.g.neoformat_enabled_javascript = {'eslint'}
 
+vim.api.nvim_set_keymap('n', '<leader>oi', ':Neoformat isort<CR>', { noremap = true, silent = true })
 -- vim-surround
 vim.g.surround_no_insert_mappings = 1
 
