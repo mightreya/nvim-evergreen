@@ -36,10 +36,11 @@ require('packer').startup(function()
   use 'editorconfig/editorconfig-vim' -- EditorConfig support
   use 'vimwiki/vimwiki' -- Notes
   use 'ray-x/lsp_signature.nvim' -- Function signature help
-  use 'github/copilot.vim' -- GitHub Copilot integration
   use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
   use 'mfussenegger/nvim-jdtls' -- Java LSP (jdtls) support
   use 'mfussenegger/nvim-dap' -- Debug Adapter Protocol (DAP) support
+  use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
+  use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
 end)
 
 -- General settings
@@ -196,6 +197,33 @@ vim.api.nvim_set_keymap('n', '<leader>ra', "<cmd>lua require('dap').launch({type
 -- Debug all tests in the current file
 vim.api.nvim_set_keymap('n', '<leader>da', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Debug (Launch) - Current File', mainClass = vim.fn.expand('%:p')})<CR>", {noremap = true, silent = true})
 
+-- GitHub Copilot
+require("copilot").setup({
+  suggestion = { enabled = false },
+  panel = { enabled = false },
+})
+
+-- Copilot completion
+require("copilot_cmp").setup()
+
+-- LuaSnip (snippets)
+local ls = require'luasnip'
+local s = ls.s
+local t = ls.t
+
+ls.config.set_config {
+  history = true,
+  updateevents = 'TextChanged,TextChangedI',
+}
+
+ls.add_snippets("python", {
+	s("br", {
+		t({"import pdb; pdb.set_trace()"}),
+	})
+}, {
+	key = "python",
+})
+
 -- nvim-cmp (autocompletion)
 local cmp = require'cmp'
 cmp.setup {
@@ -205,26 +233,30 @@ cmp.setup {
     end,
   },
   mapping = {
+    ["<C-n>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
+    ["<C-p>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<C-e>'] = cmp.mapping.close(),
     ['<C-y>'] = cmp.mapping.confirm({
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     }),
+    ['<Tab>'] = function(fallback)
+        if vim.fn.pumvisible() == 1 then
+            vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<C-y>', true, true, true), 'n')
+        elseif require('luasnip').expand_or_jumpable() then
+            vim.fn.feedkeys(vim.api.nvim_replace_termcodes('<Plug>luasnip-expand-or-jump', true, true, true), '')
+        else
+            fallback()
+        end
+    end,
   },
   sources = {
+    { name = 'luasnip', option = { use_show_condition = false } },
+    { name = "copilot" },
     { name = 'nvim_lsp' },
-    { name = 'luasnip' },
   },
 }
-
--- LuaSnip (snippets)
-local ls = require'luasnip'
-ls.config.set_config {
-  history = true,
-  updateevents = 'TextChanged,TextChangedI',
-}
-require('luasnip/loaders/from_vscode').load()
 
 -- neoformat (auto-formatting)
 vim.cmd('autocmd BufWritePre * Neoformat')
@@ -232,6 +264,7 @@ vim.cmd('autocmd BufWritePre * Neoformat')
 vim.g.neoformat_enabled_python = {'isort', 'black'}
 vim.g.neoformat_enabled_javascript = {'eslint'}
 
+vim.api.nvim_set_keymap('n', '<leader>oi', ':Neoformat isort<CR>', { noremap = true, silent = true })
 -- vim-surround
 vim.g.surround_no_insert_mappings = 1
 
@@ -354,4 +387,9 @@ vim.g.ale_lint_on_insert_leave = 0
 vim.api.nvim_set_keymap('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = true, silent = true })
 
 -- LSP signature
-require('lsp_signature').setup()
+require('lsp_signature').setup({
+  bind = false, -- Disable automatic binding
+})
+
+-- Add a custom keybinding to show the signature help window on demand
+vim.api.nvim_set_keymap('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { noremap = true, silent = true })
