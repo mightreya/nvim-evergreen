@@ -74,6 +74,7 @@ local on_attach = function(client, bufnr)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', ']d', '<Cmd>lua vim.diagnostic.goto_next()<CR>', opts)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '[d', '<Cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>lf', '<Cmd>lua vim.lsp.buf.format()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>ai', '<Cmd>lua vim.lsp.buf.code_action()<CR>', opts)
 end
 
 -- Configure LSP servers
@@ -180,7 +181,6 @@ vim.cmd('autocmd BufWritePre * Neoformat')
 vim.g.neoformat_enabled_python = {'isort', 'black'}
 vim.g.neoformat_enabled_javascript = {'eslint'}
 
-vim.api.nvim_set_keymap('n', '<leader>oi', ':Neoformat isort<CR>', { noremap = true, silent = true })
 -- vim-surround
 vim.g.surround_no_insert_mappings = 1
 
