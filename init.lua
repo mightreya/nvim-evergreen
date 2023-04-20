@@ -76,6 +76,7 @@ local on_attach = function(client, bufnr)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', ']d', '<Cmd>lua vim.diagnostic.goto_next()<CR>', opts)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '[d', '<Cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>lf', '<Cmd>lua vim.lsp.buf.format()<CR>', opts)
+  vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>ai', '<Cmd>lua vim.lsp.buf.code_action()<CR>', opts)
 end
 
 -- Configure LSP servers
@@ -145,37 +146,47 @@ end
 
 vim.cmd('autocmd FileType java lua setup_java_lsp()')
 
-
 -- Debug Adapter Protocol (DAP) setup
 local dap = require('dap')
 
 dap.adapters.java = function(callback, config)
-  local executable = 'java'
   local cmd = {
       "java",
+      "-Xmx1G",
+      "-XX:+UseG1GC",
+      "-XX:GCTimeRatio=4",
+      "-XX:AdaptiveSizePolicyWeight=90",
+      "-Dsun.zip.disableMemoryMapping=true",
+      "-Xverify:none",
+      "-XX:TieredStopAtLevel=1",
       "-jar",
-      jdtls_path .. "/plugins/org.eclipse.equinox.launcher_1.6.400.v20210924-0641.jar",
-      "-configuration",
-      jdtls_path .. "/config_mac",
-      "-data",
-      vim.fn.stdpath('cache') .. "/lsp_workspace"
+      jdtls_path .. "/plugins/com.microsoft.java.debug.core-0.38.0.jar"
   }
-  
-  callback({ type = 'executable', command = executable, args = cmd })
+
+  print("jdtls_path: " .. jdtls_path)
+  print("Command: " .. vim.inspect(cmd))
+
+  callback({ type = 'executable', command = cmd[1], args = vim.list_slice(cmd, 2) })
 end
 
+dap.set_log_level("DEBUG")
+
+
 dap.configurations.java = {
-  {
-    type = 'java';
-    name = 'Debug';
-    request = 'launch';
-    mainClass = '';
-    projectName = '';
-    cwd = '${workspaceFolder}';
-  },
+    {
+        type = 'java';
+        name = 'Debug';
+        request = 'launch';
+        mainClass = 'com.spotify.paymentsdkservice.Application';
+        projectName = 'payment-sdk-service';
+        javaExec = 'java',
+        cwd = '${workspaceFolder}';
+        classPaths = {vim.fn.stdpath('cache') .. "/lsp_workspace"};
+    },
 }
 
 -- Debugging keybindings
+vim.api.nvim_set_keymap('n', '<leader>db', ':lua require("dap").toggle_breakpoint()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>dc', ':lua require("dap").continue()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>ds', ':lua require("dap").step_over()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>di', ':lua require("dap").step_into()<CR>', { noremap = true, silent = true })
@@ -189,7 +200,7 @@ vim.api.nvim_set_keymap('n', '<leader>de', ':lua require("dap").disconnect(); re
 vim.api.nvim_set_keymap('n', '<leader>rt', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Run Test - Current File'})<CR>", {noremap = true, silent = true})
 
 -- Debug current test
-vim.api.nvim_set_keymap('n', '<leader>dt', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Debug (Launch) - Current File'})<CR>", {noremap = true, silent = true})
+vim.api.nvim_set_keymap('n', '<leader>dt', "<cmd>lua require('dap').run({type = 'java', request='launch', name = 'Debug (Launch) - Current File'})<CR>", {noremap = true, silent = true})
 
 -- Run all tests in the current file
 vim.api.nvim_set_keymap('n', '<leader>ra', "<cmd>lua require('dap').launch({type = 'java', request = 'launch', name = 'Run Test - Current File', mainClass = vim.fn.expand('%:p')})<CR>", {noremap = true, silent = true})
@@ -264,7 +275,6 @@ vim.cmd('autocmd BufWritePre * Neoformat')
 vim.g.neoformat_enabled_python = {'isort', 'black'}
 vim.g.neoformat_enabled_javascript = {'eslint'}
 
-vim.api.nvim_set_keymap('n', '<leader>oi', ':Neoformat isort<CR>', { noremap = true, silent = true })
 -- vim-surround
 vim.g.surround_no_insert_mappings = 1
 
