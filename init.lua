@@ -178,7 +178,9 @@ cmp.setup {
 -- neoformat (auto-formatting)
 vim.cmd('autocmd BufWritePre * Neoformat')
 
-vim.g.neoformat_enabled_python = {'isort', 'black'}
+vim.g.neoformat_enabled_python = {'isort', 'black', 'autopep8'}
+vim.g.neoformat_autopep8_args = {'--max-line-length', '80'}
+
 vim.g.neoformat_enabled_javascript = {'eslint'}
 
 -- vim-surround
