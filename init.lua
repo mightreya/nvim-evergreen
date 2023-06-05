@@ -39,6 +39,27 @@ require('packer').startup(function()
   use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
   use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
   use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
+  use {
+      'nvim-neorg/neorg', -- Organise notes
+      config = function()
+          require('neorg').setup {
+            load = {
+                ['core.defaults'] = {}, -- Loads default behaviour
+                ['core.concealer'] = {}, -- Adds pretty icons to your documents
+                ['core.dirman'] = { -- Manages Neorg workspaces
+                    config = {
+                        workspaces = {
+                            notes = "~/.neorg/notes",
+                            taug = "~/.neorg/taug",
+                        },
+                    },
+                },
+            },
+          }
+      end,
+      run = ":Neorg sync-parsers",
+      requires = "nvim-lua/plenary.nvim",
+    }
 end)
 
 -- General settings
