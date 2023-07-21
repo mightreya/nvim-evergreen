@@ -49,8 +49,10 @@ require('packer').startup(function()
                 ['core.dirman'] = { -- Manages Neorg workspaces
                     config = {
                         workspaces = {
-                            notes = "~/.neorg/notes",
                             taug = "~/.neorg/taug",
+                            cw = "~/.neorg/cw",
+                            notes = "~/.neorg/notes",
+                            sc = "~/.neorg/sc",
                         },
                     },
                 },
@@ -59,7 +61,7 @@ require('packer').startup(function()
       end,
       run = ":Neorg sync-parsers",
       requires = "nvim-lua/plenary.nvim",
-    }
+  }
 end)
 
 -- General settings
@@ -71,9 +73,18 @@ vim.opt.shiftwidth = 4 -- Default indent 4
 vim.opt.tabstop = 4 -- Default tab width 4
 vim.opt.smartindent = true -- Auto-indent new lines
 vim.opt.hlsearch = true -- Highlight search results
+
 vim.cmd('autocmd InsertLeave * :set nopaste') -- Disable paste mode on insert leave
 vim.cmd('autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o') -- Remove comments continuation
 vim.cmd('autocmd BufRead,BufNewFile * setlocal textwidth=0') -- Disable automatic line break
+
+-- Set 2 spaces indentation for specific file types
+vim.cmd([[
+augroup IndentationOverrides
+  autocmd!
+  autocmd FileType javascript,javascriptreact,typescript,typescriptreact,json setlocal shiftwidth=2 tabstop=2
+augroup END
+]])
 
 -- Sync buffers with the saved files on disk
 vim.cmd('autocmd FocusGained,BufEnter * :checktime')
@@ -130,7 +141,7 @@ nvim_lsp['pyright'].setup {
 -- Enable TypeScript LSP for JavaScript files
 nvim_lsp['tsserver'].setup {
   on_attach = function(client, bufnr)
-    client.server_capabilities.document_formatting = false
+    client.resolved_capabilities.document_formatting = false
     on_attach(client, bufnr)
   end
 }
@@ -196,14 +207,6 @@ cmp.setup {
   },
 }
 
--- neoformat (auto-formatting)
-vim.cmd('autocmd BufWritePre * Neoformat')
-
-vim.g.neoformat_enabled_python = {'isort', 'black', 'autopep8'}
-vim.g.neoformat_autopep8_args = {'--max-line-length', '80'}
-
-vim.g.neoformat_enabled_javascript = {'eslint'}
-
 -- vim-surround
 vim.g.surround_no_insert_mappings = 1
 
@@ -223,7 +226,7 @@ require('indent_blankline').setup {
 -- Telescope
 require('telescope').setup {
   defaults = {
-    path_display = {"shorten"},
+    path_display = {"absolute"},
     file_ignore_patterns = { "node_modules" },
   },
   extensions = {
@@ -332,3 +335,34 @@ require('lsp_signature').setup({
 
 -- Add a custom keybinding to show the signature help window on demand
 vim.api.nvim_set_keymap('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { noremap = true, silent = true })
+
+-- Rell
+vim.cmd([[
+  au BufRead,BufNewFile *.rell setfiletype rell
+]])
+
+
+-- Neoformat
+vim.cmd('autocmd BufWritePre * Neoformat')
+
+vim.g.neoformat_javascript_prettier = {
+    exe = "./node_modules/.bin/prettier",
+    args = {"--stdin-filepath", vim.api.nvim_buf_get_name(0)},
+    stdin = true
+}
+vim.g.neoformat_typescript_prettier = {
+    exe = "./node_modules/.bin/prettier",
+    args = {"--stdin-filepath", vim.api.nvim_buf_get_name(0)},
+    stdin = true
+}
+
+vim.g.neoformat_enabled_python = {'isort', 'black', 'autopep8'}
+vim.g.neoformat_autopep8_args = {'--max-line-length', '80'}
+
+vim.g.neoformat_enabled_javascript = {'eslint_d'}
+vim.g.neoformat_enabled_javascriptreact = {'eslint_d'}
+vim.g.neoformat_enabled_typescript = {'eslint_d'}
+vim.g.neoformat_enabled_typescriptreact = {'eslint_d'}
+vim.g.neoformat_enabled_json = {'eslint_d'}
+
+vim.api.nvim_set_keymap('v', '=', ':Neoformat<CR>', {noremap = true})
