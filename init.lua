@@ -53,6 +53,7 @@ require('packer').startup(function()
                             cw = "~/.neorg/cw",
                             music = "~/.neorg/music",
                             notes = "~/.neorg/notes",
+                            might = "~/.neorg/might",
                             sc = "~/.neorg/sc",
                         },
                     },
@@ -68,6 +69,7 @@ require('packer').startup(function()
 end)
 
 -- General settings
+vim.g.mapleader = ","
 vim.opt.clipboard = 'unnamedplus'
 vim.opt.termguicolors = true
 vim.opt.number = true -- Line numbers
