@@ -50,12 +50,14 @@ require('packer').startup(function()
                     config = {
                         workspaces = {
                             taug = "~/.neorg/taug",
+                            hm = "~/.neorg/hm",
                             cw = "~/.neorg/cw",
                             music = "~/.neorg/music",
                             notes = "~/.neorg/notes",
                             might = "~/.neorg/might",
                             sc = "~/.neorg/sc",
                         },
+                        default_workspace = "notes",
                     },
                 },
             },
@@ -78,6 +80,8 @@ vim.opt.shiftwidth = 4 -- Default indent 4
 vim.opt.tabstop = 4 -- Default tab width 4
 vim.opt.smartindent = true -- Auto-indent new lines
 vim.opt.hlsearch = true -- Highlight search results
+
+vim.o.showcmd = false
 
 vim.cmd('autocmd InsertLeave * :set nopaste') -- Disable paste mode on insert leave
 vim.cmd('autocmd FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o') -- Remove comments continuation
@@ -221,13 +225,26 @@ vim.g.surround_no_insert_mappings = 1
 require('nvim_comment').setup()
 
 -- indent-blankline
-require('indent_blankline').setup {
-    show_current_context = true,
-    filetype_exclude = { 'help', 'terminal', 'dashboard', 'packer', 'lspinfo', 'TelescopePrompt', 'TelescopeResults', 'startify', 'NvimTree', 'vista', 'qf', 'vimwiki' },
-    buftype_exclude = { 'terminal', 'nofile' },
-    space_char_blankline = ' ',
-    show_trailing_blankline_indent = false,
-    show_first_indent_level = false,
+-- require('indent_blankline').setup {
+--     show_current_context = true,
+--     filetype_exclude = { 'help', 'terminal', 'dashboard', 'packer', 'lspinfo', 'TelescopePrompt', 'TelescopeResults', 'startify', 'NvimTree', 'vista', 'qf', 'vimwiki' },
+--     buftype_exclude = { 'terminal', 'nofile' },
+--     space_char_blankline = ' ',
+--     show_trailing_blankline_indent = false,
+--     show_first_indent_level = false,
+-- }
+
+require("ibl").setup {
+    indent = {
+        char = "│",
+    },
+    exclude = {
+        filetypes = { "help", "terminal", "dashboard", "packer", "lspinfo", "TelescopePrompt", "TelescopeResults", "startify", "NvimTree", "vista", "qf", "vimwiki" },
+        buftypes = { "terminal", "nofile" }
+    },
+    scope = {
+        enabled = true 
+    }
 }
 
 -- Telescope
