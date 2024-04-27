@@ -116,6 +116,7 @@ local on_attach = function(client, bufnr)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', '[d', '<Cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>lf', '<Cmd>lua vim.lsp.buf.format()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>ai', '<Cmd>lua vim.lsp.buf.code_action()<CR>', opts)
+
     -- Add a custom keybinding to show the signature help window on demand
     vim.api.nvim_set_keymap('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { noremap = true, silent = true })
 end
@@ -341,14 +342,26 @@ require('nvim-treesitter.configs').setup {
 
 -- Python linters
 vim.g.ale_linters = {
-    python = {'flake8'},
+    python = {'flake8', 'pylint'},
 }
 vim.g.ale_fixers = {
-    python = {'autopep8'},
+    python = {'isort', 'autopep8', 'pycln', 'ruff'},
 }
 vim.g.ale_fix_on_save = 1
 vim.g.ale_lint_on_text_changed = 'never'
 vim.g.ale_lint_on_insert_leave = 0
+vim.g.ale_completion_autoimport = 1
+
+
+-- Reducing linter errors
+vim.g.ale_python_flake8_options = '--max-line-length=120'
+vim.g.ale_python_pylint_options = '--disable=C0111,C0301,W0603'
+
+-- Mappings
+vim.api.nvim_set_keymap('n', '<leader>of', ':!open %:h<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>np', ':enew<CR>:setfiletype python<CR>:file new_python_file<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>nm', ':enew<CR>:setfiletype markdown<CR>:file new_markdown_file<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>jf', ':Neoformat json<CR>', { noremap = true, silent = true })
 
 -- Symbols-outline
 vim.api.nvim_set_keymap('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = true, silent = true })
@@ -386,14 +399,28 @@ vim.g.neoformat_typescript_prettier = {
     stdin = true
 }
 
+vim.g.neoformat_json_prettier = {
+  exe = '/opt/homebrew/bin/prettier',
+  args = {'.'},
+  stdin = true
+}
+
+vim.g.neoformat_json_jq = {
+  exe = '/opt/homebrew/bin/jq',
+  args = {'.'},
+  stdin = true
+}
+
 vim.g.neoformat_enabled_python = {'isort', 'black', 'autopep8'}
 vim.g.neoformat_autopep8_args = {'--max-line-length', '80'}
 
 vim.g.neoformat_enabled_javascript = {'eslint_d'}
 vim.g.neoformat_enabled_javascriptreact = {'eslint_d'}
+
 vim.g.neoformat_enabled_typescript = {'eslint_d'}
 vim.g.neoformat_enabled_typescriptreact = {'eslint_d'}
-vim.g.neoformat_enabled_json = {'eslint_d'}
+
+vim.g.neoformat_enabled_json = {'prettier', 'jq'}
 
 vim.api.nvim_set_keymap('v', '=', ':Neoformat<CR>', {noremap = true})
 
