@@ -179,7 +179,7 @@ ls.config.set_config {
 
 ls.add_snippets("python", {
     s("br", {
-        t({"import pdb; pdb.set_trace()"}),
+        t({"import ipdb; ipdb.set_trace()"}),
     })
 }, {
     key = "python",
