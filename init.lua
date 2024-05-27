@@ -12,9 +12,9 @@ vim.cmd [[packadd packer.nvim]]
 vim.cmd 'autocmd BufWritePost init.lua PackerCompile'
 
 require('packer').startup(function()
-    use 'gruvbox-community/gruvbox' -- Gruvbox colour theme
     use 'wbthomason/packer.nvim'
     use 'neovim/nvim-lspconfig' -- LSP support
+    use 'gruvbox-community/gruvbox' -- Gruvbox colour theme
     use 'hrsh7th/nvim-cmp' -- Autocompletion
     use 'hrsh7th/cmp-nvim-lsp' -- LSP source for nvim-cmp
     use 'saadparwaiz1/cmp_luasnip' -- Snippets source for nvim-cmp
@@ -34,37 +34,17 @@ require('packer').startup(function()
     use 'lervag/vimtex' -- LaTeX support
     use 'simrat39/symbols-outline.nvim' -- File overview (methods, classes, etc.)
     use 'editorconfig/editorconfig-vim' -- EditorConfig support
-    use 'vimwiki/vimwiki' -- Notes
+    use 'lervag/wiki.vim' -- Notes
     use 'ray-x/lsp_signature.nvim' -- Function signature help
     use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
     use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
     use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
     use {
-        'nvim-neorg/neorg', -- Organise notes
+        'ribelo/taskwarrior.nvim',
         config = function()
-            require('neorg').setup {
-                load = {
-                    ['core.defaults'] = {}, -- Loads default behaviour
-                    ['core.concealer'] = {}, -- Adds pretty icons to your documents
-                    ['core.dirman'] = { -- Manages Neorg workspaces
-                    config = {
-                        workspaces = {
-                            taug = "~/.neorg/taug",
-                            hm = "~/.neorg/hm",
-                            cw = "~/.neorg/cw",
-                            music = "~/.neorg/music",
-                            notes = "~/.neorg/notes",
-                            might = "~/.neorg/might",
-                            sc = "~/.neorg/sc",
-                        },
-                        default_workspace = "notes",
-                    },
-                },
-            },
-        }
-        end,
-        run = ":Neorg sync-parsers",
-        requires = "nvim-lua/plenary.nvim",
+            require("taskwarrior_nvim").setup({
+            })
+        end
     }
     use 'tidalcycles/vim-tidal' -- TidalCycles plugin
     use 'davidgranstrom/scnvim' -- SuperCollider frontend
@@ -463,3 +443,6 @@ scnvim.setup({
     },
   },
 })
+
+-- wiki.vim
+vim.g.wiki_root = '~/wiki'
