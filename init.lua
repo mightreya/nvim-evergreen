@@ -259,18 +259,18 @@ require('telescope').setup {
             override_generic_sorter = false,
             override_file_sorter = false,
         },
-    },
-    project = {
-        base_dirs = {
-            '~/Development',
-            '~/wiki',
+        project = {
+            base_dirs = {
+                '~/Development',
+                '~/wiki',
+            },
         },
-    },
-    ['ui-select'] = {
-        require('telescope.themes').get_dropdown {
-            -- add opts here
+        ['ui-select'] = {
+            require('telescope.themes').get_dropdown {
+                -- add opts here
+            }
         }
-    }
+    },
 }
 require('telescope').load_extension('fzf')
 require('telescope').load_extension('project')
@@ -302,6 +302,9 @@ vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
 vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
+vim.keymap.set('n', '<leader>fp', function()
+  require('telescope').extensions.project.project{}
+end, { noremap = true, silent = true })
 
 -- Gitsigns
 require('gitsigns').setup()
