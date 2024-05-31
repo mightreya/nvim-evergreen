@@ -12,11 +12,13 @@ vim.cmd [[packadd packer.nvim]]
 vim.cmd 'autocmd BufWritePost init.lua PackerCompile'
 
 require('packer').startup(function()
+    use 'gruvbox-community/gruvbox' -- Gruvbox colour theme
     use 'wbthomason/packer.nvim'
     use 'neovim/nvim-lspconfig' -- LSP support
-    use 'gruvbox-community/gruvbox' -- Gruvbox colour theme
-    use 'hrsh7th/nvim-cmp' -- Autocompletion
     use 'hrsh7th/cmp-nvim-lsp' -- LSP source for nvim-cmp
+    use 'jose-elias-alvarez/null-ls.nvim' -- Null-ls for extra LSP features
+    use 'ray-x/lsp_signature.nvim' -- Function signature help
+    use 'hrsh7th/nvim-cmp' -- Autocompletion
     use 'saadparwaiz1/cmp_luasnip' -- Snippets source for nvim-cmp
     use 'L3MON4D3/LuaSnip' -- Snippet engine
     use 'sbdchd/neoformat' -- Auto-formatting
@@ -27,6 +29,8 @@ require('packer').startup(function()
     use 'nvim-lua/plenary.nvim' -- A Lua library containing utility functions and classes, used as a dependency by other plugins
     use 'nvim-telescope/telescope.nvim' -- Quick search by file name or content
     use 'nvim-telescope/telescope-fzf-native.nvim' -- FZF integration for Telescope
+    use 'nvim-telescope/telescope-project.nvim' -- Project extension for Telescope
+    use 'nvim-telescope/telescope-ui-select.nvim' -- UI Select extension for Telescope
     use 'lewis6991/gitsigns.nvim' -- Git support
     use 'norcalli/nvim-colorizer.lua' -- Colorize hex codes, RGB, etc.
     use 'nvim-treesitter/nvim-treesitter' -- Tree-sitter for syntax highlighting
@@ -35,17 +39,16 @@ require('packer').startup(function()
     use 'simrat39/symbols-outline.nvim' -- File overview (methods, classes, etc.)
     use 'editorconfig/editorconfig-vim' -- EditorConfig support
     use 'lervag/wiki.vim' -- Notes
-    use 'ray-x/lsp_signature.nvim' -- Function signature help
     use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
     use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
     use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
-    use {
-        'ribelo/taskwarrior.nvim',
-        config = function()
-            require("taskwarrior_nvim").setup({
-            })
-        end
-    }
+    -- use {
+    --     'ribelo/taskwarrior.nvim',
+    --     config = function()
+    --         require("taskwarrior_nvim").setup({
+    --         })
+    --     end
+    -- }
     use 'tidalcycles/vim-tidal' -- TidalCycles plugin
     use 'davidgranstrom/scnvim' -- SuperCollider frontend
 end)
@@ -87,15 +90,15 @@ local on_attach = function(client, bufnr)
     -- Mappings
     local opts = { noremap = true, silent = true }
     vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<Cmd>lua vim.lsp.buf.definition()<CR>', opts)
-    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<Cmd>lua vim.lsp.buf.hover()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gr', '<Cmd>lua vim.lsp.buf.references()<CR>', opts)
-    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>rn', '<Cmd>lua vim.lsp.buf.rename()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gi', '<Cmd>lua vim.lsp.buf.implementation()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>rn', '<Cmd>lua vim.lsp.buf.rename()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>ld', '<Cmd>lua vim.diagnostic.open_float()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>ai', '<Cmd>lua vim.lsp.buf.code_action()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>lf', '<Cmd>lua vim.lsp.buf.format()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<Cmd>lua vim.lsp.buf.hover()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', ']d', '<Cmd>lua vim.diagnostic.goto_next()<CR>', opts)
     vim.api.nvim_buf_set_keymap(bufnr, 'n', '[d', '<Cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
-    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>lf', '<Cmd>lua vim.lsp.buf.format()<CR>', opts)
-    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<leader>ai', '<Cmd>lua vim.lsp.buf.code_action()<CR>', opts)
 
     -- Add a custom keybinding to show the signature help window on demand
     vim.api.nvim_set_keymap('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { noremap = true, silent = true })
@@ -105,6 +108,22 @@ end
 local servers = {
     'pyright', 'sourcekit', 'omnisharp', 'gopls', 'tsserver', 'html', 'cssls', 'tailwindcss', 'jsonls'
 }
+
+-- Null-ls setup
+local null_ls = require('null-ls')
+null_ls.setup({
+    sources = {
+        null_ls.builtins.diagnostics.flake8,
+        null_ls.builtins.formatting.black,
+        null_ls.builtins.formatting.isort,
+        null_ls.builtins.code_actions.gitsigns,
+    },
+    on_attach = function(client)
+        if client.server_capabilities.document_formatting then
+            vim.cmd("autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()")
+        end
+    end,
+})
 
 for _, lsp in ipairs(servers) do
     nvim_lsp[lsp].setup {
@@ -241,8 +260,21 @@ require('telescope').setup {
             override_file_sorter = false,
         },
     },
+    project = {
+        base_dirs = {
+            '~/Development',
+            '~/wiki',
+        },
+    },
+    ['ui-select'] = {
+        require('telescope.themes').get_dropdown {
+            -- add opts here
+        }
+    }
 }
 require('telescope').load_extension('fzf')
+require('telescope').load_extension('project')
+require('telescope').load_extension('ui-select')
 
 local builtin = require('telescope.builtin')
 
@@ -350,11 +382,6 @@ vim.api.nvim_set_keymap('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = tru
 require('lsp_signature').setup({
     bind = false, -- Disable automatic binding
 })
-
--- Rell
-vim.cmd([[
-au BufRead,BufNewFile *.rell setfiletype rell
-]])
 
 -- Neoformat
 -- vim.cmd('autocmd BufWritePre * Neoformat')
