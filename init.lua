@@ -39,16 +39,10 @@ require('packer').startup(function()
     use 'simrat39/symbols-outline.nvim' -- File overview (methods, classes, etc.)
     use 'editorconfig/editorconfig-vim' -- EditorConfig support
     use 'lervag/wiki.vim' -- Notes
+    use 'lervag/wiki-ft.vim' -- Wiki syntax highlighting
     use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
     use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
     use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
-    -- use {
-    --     'ribelo/taskwarrior.nvim',
-    --     config = function()
-    --         require("taskwarrior_nvim").setup({
-    --         })
-    --     end
-    -- }
     use 'tidalcycles/vim-tidal' -- TidalCycles plugin
     use 'davidgranstrom/scnvim' -- SuperCollider frontend
 end)
@@ -106,7 +100,7 @@ end
 
 -- Configure LSP servers
 local servers = {
-    'pyright', 'sourcekit', 'omnisharp', 'gopls', 'tsserver', 'html', 'cssls', 'tailwindcss', 'jsonls'
+    'pyright', 'sourcekit', 'omnisharp', 'gopls', 'ts_ls', 'html', 'cssls', 'tailwindcss', 'jsonls'
 }
 
 -- Null-ls setup
@@ -134,27 +128,36 @@ for _, lsp in ipairs(servers) do
     }
 end
 
--- Enable stubs for Python
-nvim_lsp['pyright'].setup {
-    settings = {
-        python = {
-            analysis = {
-                extraPaths = { vim.fn.expand("~/.stubs") },
-            },
-        },
-    },
-    on_attach = on_attach,
-    flags = {
-        debounce_text_changes = 150,
-    },
-}
+local util = require 'lspconfig.util'
 
--- Enable TypeScript LSP for JavaScript files
-nvim_lsp['tsserver'].setup {
-    on_attach = function(client, bufnr)
-        client.resolved_capabilities.document_formatting = false
-        on_attach(client, bufnr)
+-- Configure Poetry and stubs for Python
+require('lspconfig').pyright.setup {
+  capabilities = capabilities,
+  on_attach = on_attach,
+  before_init = function(_, config)
+    local py_root = util.find_git_ancestor(config.root_dir) or config.root_dir
+    -- Try to find and use poetry environment
+    local poetry_env = vim.fn.trim(vim.fn.system('cd "' .. py_root .. '" && poetry env info -p 2>/dev/null'))
+    if vim.v.shell_error == 0 and vim.fn.isdirectory(poetry_env) == 1 then
+      config.settings.python.pythonPath = poetry_env .. '/bin/python'
+    else
+      -- Fallback: Check for .venv in project root
+      local venv = py_root .. '/.venv'
+      if vim.fn.isdirectory(venv) == 1 then
+        config.settings.python.pythonPath = venv .. '/bin/python'
+      end
     end
+  end,
+  settings = {
+    python = {
+      analysis = {
+        extraPaths = { vim.fn.expand("~/.stubs") },
+        autoSearchPaths = true,
+        useLibraryCodeForTypes = true,
+        diagnosticMode = "workspace",
+      },
+    },
+  },
 }
 
 -- GitHub Copilot
@@ -224,16 +227,6 @@ vim.g.surround_no_insert_mappings = 1
 -- nvim-comment
 require('nvim_comment').setup()
 
--- indent-blankline
--- require('indent_blankline').setup {
---     show_current_context = true,
---     filetype_exclude = { 'help', 'terminal', 'dashboard', 'packer', 'lspinfo', 'TelescopePrompt', 'TelescopeResults', 'startify', 'NvimTree', 'vista', 'qf', 'vimwiki' },
---     buftype_exclude = { 'terminal', 'nofile' },
---     space_char_blankline = ' ',
---     show_trailing_blankline_indent = false,
---     show_first_indent_level = false,
--- }
-
 require("ibl").setup {
     indent = {
         char = "│",
@@ -243,7 +236,7 @@ require("ibl").setup {
         buftypes = { "terminal", "nofile" }
     },
     scope = {
-        enabled = true 
+        enabled = true
     }
 }
 
@@ -345,7 +338,7 @@ vim.cmd('colorscheme gruvbox')
 require('nvim-treesitter.configs').setup {
     ensure_installed = {
         "bash", "c", "cpp", "c_sharp", "css", "go", "html", "javascript",
-        "json", "lua", "python", "rust", "swift", "typescript", "yaml"
+        "json", "lua", "python", "rust", "swift", "typescript", "yaml", "glsl"
     },
     highlight = {
         enable = true,
@@ -370,12 +363,41 @@ vim.g.ale_completion_autoimport = 1
 
 -- Reducing linter errors
 vim.g.ale_python_flake8_options = '--max-line-length=120'
-vim.g.ale_python_pylint_options = '--disable=C0111,C0301,W0603'
+vim.g.ale_python_pylint_options = '--disable=C0111,C0301,W0603 --max-line-length=120'
 
 -- Mappings
 vim.api.nvim_set_keymap('n', '<leader>of', ':!open %:h<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>np', ':enew<CR>:setfiletype python<CR>:file new_python_file<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>nm', ':enew<CR>:setfiletype markdown<CR>:file new_markdown_file<CR>', { noremap = true, silent = true })
+
+-- Make it global
+_G.new_file = function(filetype, prefix, extension)
+  local timestamp = os.date("%Y%m%d_%H%M%S")
+  local filename  = string.format("%s_%s%s", prefix, timestamp, extension)
+  vim.cmd("enew")
+  vim.cmd("setfiletype " .. filetype)
+  vim.cmd("file " .. filename)
+end
+
+-- Then call _G.new_file in your keymaps
+vim.api.nvim_set_keymap('n', '<leader>np',
+  ":lua _G.new_file('python', 'python_file', '.py')<CR>",
+  { noremap = true, silent = true }
+)
+
+vim.api.nvim_set_keymap('n', '<leader>ns',
+  ":lua _G.new_file('swift', 'swift_file', '.swift')<CR>",
+  { noremap = true, silent = true }
+)
+
+vim.api.nvim_set_keymap('n', '<leader>nm',
+  ":lua _G.new_file('markdown', 'markdown_file', '.md')<CR>",
+  { noremap = true, silent = true }
+)
+
+vim.api.nvim_set_keymap('n', '<leader>nc',
+  ":lua _G.new_file('supercollider', 'supercollider_file', '.scd')<CR>",
+  { noremap = true, silent = true }
+)
+
 vim.api.nvim_set_keymap('n', '<leader>jf', ':Neoformat json<CR>', { noremap = true, silent = true })
 
 -- Symbols-outline
@@ -397,6 +419,13 @@ _G.try_format = function()
 end
 
 vim.cmd('autocmd BufWritePre * lua _G.try_format()')
+
+vim.cmd([[
+  augroup ShaderHighlighting
+    autocmd!
+    autocmd BufRead,BufNewFile *.frag,*.vert,*.glsl set filetype=glsl
+  augroup END
+]])
 
 vim.g.neoformat_javascript_prettier = {
     exe = "./node_modules/.bin/prettier",
@@ -422,7 +451,8 @@ vim.g.neoformat_json_jq = {
 }
 
 vim.g.neoformat_enabled_python = {'isort', 'black', 'autopep8'}
-vim.g.neoformat_autopep8_args = {'--max-line-length', '80'}
+vim.g.neoformat_autopep8_args = {'--max-line-length', '120'}
+vim.g.neoformat_black_args = {'--line-length', '120'}
 
 vim.g.neoformat_enabled_javascript = {'eslint_d'}
 vim.g.neoformat_enabled_javascriptreact = {'eslint_d'}
@@ -476,3 +506,4 @@ scnvim.setup({
 
 -- wiki.vim
 vim.g.wiki_root = '~/wiki'
+vim.g.wiki_filetypes = { 'md' }
