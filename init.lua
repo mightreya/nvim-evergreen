@@ -377,6 +377,7 @@ vim.api.nvim_set_keymap('n', '<leader>of', ':!open %:h<CR>', { noremap = true, s
 vim.api.nvim_set_keymap('n', '<leader>np', ':enew<CR>:setfiletype python<CR>:file new_python_file<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>nm', ':enew<CR>:setfiletype markdown<CR>:file new_markdown_file<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>jf', ':Neoformat json<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>pf', ':%!python3 -c "import sys, ast, pprint; pprint.pprint(ast.literal_eval(sys.stdin.read()))"<CR>', { noremap = true, silent = true })
 
 -- Symbols-outline
 vim.api.nvim_set_keymap('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = true, silent = true })
