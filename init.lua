@@ -45,6 +45,21 @@ require('packer').startup(function()
     use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
     use 'tidalcycles/vim-tidal' -- TidalCycles plugin
     use 'davidgranstrom/scnvim' -- SuperCollider frontend
+    
+    -- Required plugins for Avante
+    use 'stevearc/dressing.nvim'
+    use 'MunifTanjim/nui.nvim'
+    use 'MeanderingProgrammer/render-markdown.nvim'
+    
+    -- Optional dependencies (already included above: nvim-cmp, nvim-web-devicons, copilot.lua)
+    use 'HakonHarnes/img-clip.nvim'
+    
+    -- Avante.nvim with build process
+    use {
+        'yetone/avante.nvim',
+        branch = 'main',
+        run = 'make',
+    }
 end)
 
 -- General settings
@@ -508,3 +523,17 @@ scnvim.setup({
 -- wiki.vim
 vim.g.wiki_root = '~/wiki'
 vim.g.wiki_filetypes = { 'md' }
+
+-- Initialize Avante
+require("avante").setup({
+  provider = "gemini",
+  gemini = {
+    endpoint = "https://generativelanguage.googleapis.com/v1beta/models",
+    model = "gemini-2.0-flash-thinking-exp",
+    temperature = 0.7,
+    max_tokens = 4096,
+  },
+  behaviour = {
+    auto_suggestions = false,
+  },
+})
