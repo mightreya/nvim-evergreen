@@ -16,7 +16,8 @@ require('packer').startup(function()
     use 'wbthomason/packer.nvim'
     use 'neovim/nvim-lspconfig' -- LSP support
     use 'hrsh7th/cmp-nvim-lsp' -- LSP source for nvim-cmp
-    use 'jose-elias-alvarez/null-ls.nvim' -- Null-ls for extra LSP features
+    use 'nvimtools/none-ls.nvim' -- Replacement for null-ls (community fork)
+    use 'nvimtools/none-ls-extras.nvim' -- Dependency of none-ls
     use 'ray-x/lsp_signature.nvim' -- Function signature help
     use 'hrsh7th/nvim-cmp' -- Autocompletion
     use 'saadparwaiz1/cmp_luasnip' -- Snippets source for nvim-cmp
@@ -41,25 +42,9 @@ require('packer').startup(function()
     use 'lervag/wiki.vim' -- Notes
     use 'lervag/wiki-ft.vim' -- Wiki syntax highlighting
     use 'dense-analysis/ale' -- Asynchronous Lint Engine (ALE) for linting and fixing code in real-time
-    use 'zbirenbaum/copilot.lua'  -- GitHub Copilot integration
-    use 'zbirenbaum/copilot-cmp' -- Copilot integration with nvim-cmp
     use 'tidalcycles/vim-tidal' -- TidalCycles plugin
     use 'davidgranstrom/scnvim' -- SuperCollider frontend
-    
-    -- Required plugins for Avante
-    use 'stevearc/dressing.nvim'
-    use 'MunifTanjim/nui.nvim'
-    use 'MeanderingProgrammer/render-markdown.nvim'
-    
-    -- Optional dependencies (already included above: nvim-cmp, nvim-web-devicons, copilot.lua)
-    use 'HakonHarnes/img-clip.nvim'
-    
-    -- Avante.nvim with build process
-    use {
-        'yetone/avante.nvim',
-        branch = 'main',
-        run = 'make',
-    }
+    use 'coder/claudecode.nvim' -- Claude Code integration
 end)
 
 -- General settings
@@ -118,18 +103,22 @@ local servers = {
     'pyright', 'sourcekit', 'omnisharp', 'gopls', 'ts_ls', 'html', 'cssls', 'tailwindcss', 'jsonls'
 }
 
--- Null-ls setup
+-- None-ls setup
 local null_ls = require('null-ls')
 null_ls.setup({
     sources = {
-        null_ls.builtins.diagnostics.flake8,
-        null_ls.builtins.formatting.black,
-        null_ls.builtins.formatting.isort,
+        require("none-ls.diagnostics.ruff"),
+        require("none-ls.formatting.ruff"),
         null_ls.builtins.code_actions.gitsigns,
     },
-    on_attach = function(client)
-        if client.server_capabilities.document_formatting then
-            vim.cmd("autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()")
+    on_attach = function(client, bufnr)
+        if client.supports_method("textDocument/formatting") then
+            vim.api.nvim_create_autocmd("BufWritePre", {
+                buffer = bufnr,
+                callback = function()
+                    vim.lsp.buf.format({ bufnr = bufnr })
+                end,
+            })
         end
     end,
 })
@@ -145,21 +134,21 @@ end
 
 local util = require 'lspconfig.util'
 
--- Configure Poetry and stubs for Python
+-- Configure uv virtual environment detection for Python
 require('lspconfig').pyright.setup {
-  capabilities = capabilities,
   on_attach = on_attach,
   before_init = function(_, config)
     local py_root = util.find_git_ancestor(config.root_dir) or config.root_dir
-    -- Try to find and use poetry environment
-    local poetry_env = vim.fn.trim(vim.fn.system('cd "' .. py_root .. '" && poetry env info -p 2>/dev/null'))
-    if vim.v.shell_error == 0 and vim.fn.isdirectory(poetry_env) == 1 then
-      config.settings.python.pythonPath = poetry_env .. '/bin/python'
+    
+    -- Try to find and use uv virtual environment
+    local uv_venv = py_root .. '/.venv'
+    if vim.fn.isdirectory(uv_venv) == 1 then
+      config.settings.python.pythonPath = uv_venv .. '/bin/python'
     else
-      -- Fallback: Check for .venv in project root
-      local venv = py_root .. '/.venv'
-      if vim.fn.isdirectory(venv) == 1 then
-        config.settings.python.pythonPath = venv .. '/bin/python'
+      -- Fallback: Try poetry environment
+      local poetry_env = vim.fn.trim(vim.fn.system('cd "' .. py_root .. '" && poetry env info -p 2>/dev/null'))
+      if vim.v.shell_error == 0 and vim.fn.isdirectory(poetry_env) == 1 then
+        config.settings.python.pythonPath = poetry_env .. '/bin/python'
       end
     end
   end,
@@ -174,15 +163,6 @@ require('lspconfig').pyright.setup {
     },
   },
 }
-
--- GitHub Copilot
-require("copilot").setup({
-    suggestion = { enabled = false },
-    panel = { enabled = false },
-})
-
--- Copilot completion
-require("copilot_cmp").setup()
 
 -- LuaSnip (snippets)
 local ls = require'luasnip'
@@ -231,7 +211,6 @@ cmp.setup {
     },
     sources = {
         { name = 'luasnip', option = { use_show_condition = false } },
-        { name = "copilot" },
         { name = 'nvim_lsp' },
     },
 }
@@ -269,7 +248,6 @@ require('telescope').setup {
         },
         project = {
             base_dirs = {
-                '~/Development',
                 '~/wiki',
             },
         },
@@ -363,22 +341,17 @@ require('nvim-treesitter.configs').setup {
     },
 }
 
--- Python linters
+-- ALE configuration
 vim.g.ale_linters = {
-    python = {'flake8', 'pylint'},
+    python = {'ruff'},
 }
 vim.g.ale_fixers = {
-    python = {'isort', 'autopep8', 'pycln', 'ruff'},
+    python = {'ruff', 'ruff_format'},
 }
-vim.g.ale_fix_on_save = 1
+vim.g.ale_fix_on_save = 0
 vim.g.ale_lint_on_text_changed = 'never'
 vim.g.ale_lint_on_insert_leave = 0
 vim.g.ale_completion_autoimport = 1
-
-
--- Reducing linter errors
-vim.g.ale_python_flake8_options = '--max-line-length=120'
-vim.g.ale_python_pylint_options = '--disable=C0111,C0301,W0603 --max-line-length=120'
 
 -- Mappings
 vim.api.nvim_set_keymap('n', '<leader>of', ':!open %:h<CR>', { noremap = true, silent = true })
@@ -425,8 +398,6 @@ require('lsp_signature').setup({
 })
 
 -- Neoformat
--- vim.cmd('autocmd BufWritePre * Neoformat')
-
 _G.try_format = function()
     local succeeded, result = pcall(vim.cmd, 'Neoformat')
     if not succeeded then
@@ -434,7 +405,24 @@ _G.try_format = function()
     end
 end
 
-vim.cmd('autocmd BufWritePre * lua _G.try_format()')
+-- Only use neoformat for non-Python files (Python handled by none-ls with ruff)
+vim.cmd([[
+  augroup PythonFormatting
+    autocmd!
+    autocmd BufWritePre *.py lua vim.lsp.buf.format()
+  augroup END
+]])
+
+vim.api.nvim_create_augroup("NonPythonFormatting", { clear = true })
+vim.api.nvim_create_autocmd("BufWritePre", {
+  group = "NonPythonFormatting",
+  pattern = "*",
+  callback = function()
+    if vim.bo.filetype ~= 'python' then
+      _G.try_format()
+    end
+  end,
+})
 
 vim.cmd([[
   augroup ShaderHighlighting
@@ -465,10 +453,6 @@ vim.g.neoformat_json_jq = {
   args = {'.'},
   stdin = true
 }
-
-vim.g.neoformat_enabled_python = {'isort', 'black', 'autopep8'}
-vim.g.neoformat_autopep8_args = {'--max-line-length', '120'}
-vim.g.neoformat_black_args = {'--line-length', '120'}
 
 vim.g.neoformat_enabled_javascript = {'eslint_d'}
 vim.g.neoformat_enabled_javascriptreact = {'eslint_d'}
@@ -524,16 +508,53 @@ scnvim.setup({
 vim.g.wiki_root = '~/wiki'
 vim.g.wiki_filetypes = { 'md' }
 
--- Initialize Avante
-require("avante").setup({
-  provider = "gemini",
-  gemini = {
-    endpoint = "https://generativelanguage.googleapis.com/v1beta/models",
-    model = "gemini-2.0-flash-thinking-exp",
-    temperature = 0.7,
-    max_tokens = 4096,
-  },
-  behaviour = {
-    auto_suggestions = false,
-  },
+-- Python pickle file viewer
+vim.api.nvim_create_autocmd("BufReadCmd", {
+  pattern = "*.pkl",
+  callback = function()
+    local file = vim.fn.expand("<afile>:p")
+    local cmd = string.format('python3 -c "import pickle, pprint; pprint.pprint(pickle.load(open(%s, \'rb\')))"', vim.fn.shellescape(file))
+    local output = vim.fn.systemlist(cmd)
+    
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, output)
+    vim.bo.filetype = "python"
+    vim.bo.readonly = true
+    vim.bo.modifiable = false
+  end,
 })
+
+-- Parquet to CSV conversion
+vim.api.nvim_create_autocmd("BufReadCmd", {
+  pattern = "*.parquet",
+  callback = function()
+    -- Get the file path of the Parquet file being opened
+    local file = vim.fn.expand("<afile>")
+    -- Run parquet-tools to convert the file to CSV
+    local cmd = "parquet-tools cat -f csv " .. vim.fn.shellescape(file)
+    local output = vim.fn.systemlist(cmd)
+    
+    -- Replace the buffer content with the converted output
+    vim.api.nvim_buf_set_lines(0, 0, -1, false, output)
+    -- Set the filetype to csv for better syntax highlighting (optional)
+    vim.bo.filetype = "csv"
+  end,
+})
+
+-- Claude Code configuration
+require('claudecode').setup({
+  -- Optional configuration
+})
+
+-- Claude Code keybindings
+vim.api.nvim_set_keymap('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
+vim.api.nvim_set_keymap('n', '<leader>af', '<cmd>ClaudeCodeFocus<cr>', { noremap = true, silent = true, desc = 'Focus Claude Code' })
+vim.api.nvim_set_keymap('n', '<leader>ar', '<cmd>ClaudeCode --resume<cr>', { noremap = true, silent = true, desc = 'Resume Claude Code' })
+vim.api.nvim_set_keymap('n', '<leader>aC', '<cmd>ClaudeCode --continue<cr>', { noremap = true, silent = true, desc = 'Continue Claude Code' })
+vim.api.nvim_set_keymap('n', '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', { noremap = true, silent = true, desc = 'Add current buffer to Claude' })
+vim.api.nvim_set_keymap('v', '<leader>as', '<cmd>ClaudeCodeSend<cr>', { noremap = true, silent = true, desc = 'Send selection to Claude' })
+vim.api.nvim_set_keymap('n', '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', { noremap = true, silent = true, desc = 'Accept Claude diff' })
+vim.api.nvim_set_keymap('n', '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', { noremap = true, silent = true, desc = 'Deny Claude diff' })
+
+-- Simple terminal escape
+vim.api.nvim_set_keymap('t', '<M-j>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Exit terminal mode' })
+
