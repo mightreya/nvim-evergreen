@@ -1,0 +1,41 @@
+local map = vim.keymap.set
+
+-- Disable search highlight on pressing space
+map('n', '<Space>', ':noh<CR>', { noremap = true, silent = true })
+
+-- Buffer navigation
+map('n', 'gp', ':bp<CR>', { noremap = true, silent = true })
+map('n', 'gn', ':bn<CR>', { noremap = true, silent = true })
+map('n', 'gl', ':ls<CR>:b<Space>', { noremap = true, silent = true })
+map('n', 'gd', ':bp<bar>bd#<CR>', { noremap = true, silent = true })
+
+-- Open file's directory
+map('n', '<leader>of', ':!open %:h<CR>', { noremap = true, silent = true })
+
+-- New file creation with timestamp
+_G.new_file = function(filetype, prefix, extension)
+  local timestamp = os.date("%Y%m%d_%H%M%S")
+  local filename = string.format("%s_%s%s", prefix, timestamp, extension)
+  vim.cmd("enew")
+  vim.cmd("setfiletype " .. filetype)
+  vim.cmd("file " .. filename)
+end
+
+map('n', '<leader>np', ":lua _G.new_file('python', 'python_file', '.py')<CR>", { noremap = true, silent = true })
+map('n', '<leader>ns', ":lua _G.new_file('swift', 'swift_file', '.swift')<CR>", { noremap = true, silent = true })
+map('n', '<leader>nm', ":lua _G.new_file('markdown', 'markdown_file', '.md')<CR>", { noremap = true, silent = true })
+map('n', '<leader>nc', ":lua _G.new_file('supercollider', 'supercollider_file', '.scd')<CR>", { noremap = true, silent = true })
+
+-- Formatting shortcuts
+map('n', '<leader>jf', ':Neoformat json<CR>', { noremap = true, silent = true })
+map('n', '<leader>pf', ':%!python3 -c "import sys, ast, pprint; pprint.pprint(ast.literal_eval(sys.stdin.read()))"<CR>', { noremap = true, silent = true })
+map('v', '=', ':Neoformat<CR>', {noremap = true})
+
+-- Symbols outline
+map('n', '<Leader>o', ':SymbolsOutline<CR>', { noremap = true, silent = true })
+
+-- LSP signature help
+map('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { noremap = true, silent = true })
+
+-- Terminal escape
+map('t', '<M-j>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Exit terminal mode' })
