@@ -39,3 +39,14 @@ map('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { no
 
 -- Terminal escape
 map('t', '<M-j>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Exit terminal mode' })
+
+-- Wiki navigation hotkeys
+map('n', '<leader>ww', ':e ~/wiki/index.md<CR>', { noremap = true, silent = true, desc = 'Open wiki index' })
+map('n', '<leader>wh', ':e ~/wiki/hm/index.md<CR>', { noremap = true, silent = true, desc = 'Open HM wiki' })
+map('n', '<leader>wt', ':e ~/wiki/taug/index.md<CR>', { noremap = true, silent = true, desc = 'Open Taug wiki' })
+map('n', '<leader>wm', ':e ~/wiki/might/index.md<CR>', { noremap = true, silent = true, desc = 'Open Might wiki' })
+map('n', '<leader>wu', ':e ~/wiki/music/index.md<CR>', { noremap = true, silent = true, desc = 'Open Music wiki' })
+map('n', '<leader>wn', ':e ~/wiki/notes/index.md<CR>', { noremap = true, silent = true, desc = 'Open Notes wiki' })
+map('n', '<leader>wo', ':e ~/wiki/ozarika/index.md<CR>', { noremap = true, silent = true, desc = 'Open Ozarika wiki' })
+map('n', '<leader>ws', ':e ~/wiki/sc/index.md<CR>', { noremap = true, silent = true, desc = 'Open SC wiki' })
+map('n', '<leader>wp', ':e ~/wiki/spectra/index.md<CR>', { noremap = true, silent = true, desc = 'Open Spectra wiki' })
