@@ -4,6 +4,27 @@ return {
     config = function()
       require('claudecode').setup()
       
+      -- Configure Claude Code buffers
+      vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter", "TermOpen"}, {
+        pattern = "*",
+        callback = function()
+          local buf_name = vim.api.nvim_buf_get_name(0)
+          -- Match Claude terminal buffers (e.g., term://.../.claude/...)
+          if buf_name:match("%.claude/") or buf_name:match("/claude%[") then
+            -- Enable relative line numbers for quick navigation (5j, 10k, etc.)
+            vim.wo.number = true
+            vim.wo.relativenumber = true
+            -- Set window width to 50% of screen
+            local screen_width = vim.o.columns
+            vim.api.nvim_win_set_width(0, math.floor(screen_width * 0.5))
+            -- Disable sign column for more space
+            vim.wo.signcolumn = "no"
+            -- Disable wrap for long lines
+            vim.wo.wrap = false
+          end
+        end
+      })
+      
       -- Fix buffer naming collision in diff.lua
       local diff_module = require('claudecode.diff')
       local original_create_diff_view = diff_module._create_diff_view_from_window
