@@ -21,6 +21,10 @@ return {
             vim.wo.signcolumn = "no"
             -- Disable wrap for long lines
             vim.wo.wrap = false
+          else
+            -- Reset to user's defaults for non-Claude buffers
+            vim.wo.number = vim.o.number
+            vim.wo.relativenumber = vim.o.relativenumber
           end
         end
       })
@@ -58,12 +62,51 @@ return {
       local map = vim.keymap.set
       map('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
       map('n', '<leader>af', '<cmd>ClaudeCodeFocus<cr>', { noremap = true, silent = true, desc = 'Focus Claude Code' })
-      map('n', '<leader>ar', '<cmd>ClaudeCode --resume<cr>', { noremap = true, silent = true, desc = 'Resume Claude Code' })
+      map('n', '<leader>aR', '<cmd>ClaudeCode --resume<cr>', { noremap = true, silent = true, desc = 'Resume Claude Code' })
       map('n', '<leader>aC', '<cmd>ClaudeCode --continue<cr>', { noremap = true, silent = true, desc = 'Continue Claude Code' })
       map('n', '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', { noremap = true, silent = true, desc = 'Add current buffer to Claude' })
       map('v', '<leader>as', '<cmd>ClaudeCodeSend<cr>', { noremap = true, silent = true, desc = 'Send selection to Claude' })
       map('n', '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', { noremap = true, silent = true, desc = 'Accept Claude diff' })
       map('n', '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', { noremap = true, silent = true, desc = 'Deny Claude diff' })
+      
+      -- Code review workflow: send modified diff as review and then deny
+      map('n', '<leader>ar', function()
+        local current_buf = vim.api.nvim_get_current_buf()
+        local tab_name = vim.b[current_buf].claudecode_diff_tab_name
+        
+        if not tab_name then
+          vim.notify("No active diff found in current buffer", vim.log.levels.WARN)
+          return
+        end
+        
+        -- Check if buffer was modified
+        local is_modified = vim.api.nvim_buf_get_option(current_buf, "modified")
+        
+        if is_modified then
+          -- Get the modified content as review
+          local lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
+          local content = "Code review for " .. tab_name .. ":\n\n" .. table.concat(lines, '\n')
+          
+          -- TODO: When implementing our own plugin, we should send content directly
+          -- to Claude terminal instead of this temp file workaround. ClaudeCodeSend
+          -- requires real file paths for at-mentions, so we use temp file approach.
+          local temp_file = vim.fn.tempname() .. "_review.txt"
+          vim.fn.writefile(vim.split(content, '\n'), temp_file)
+          
+          -- Add the temp file to Claude and then delete it
+          vim.cmd('ClaudeCodeAdd ' .. temp_file)
+          vim.fn.delete(temp_file)
+          
+          -- Auto-deny after sending review (optional)
+          vim.defer_fn(function()
+            vim.cmd('ClaudeCodeDiffDeny')
+          end, 100)  -- Small delay to ensure review is sent first
+          
+          vim.notify("Review sent to Claude and diff denied.", vim.log.levels.INFO)
+        else
+          vim.notify("No modifications found to send as review", vim.log.levels.WARN)
+        end
+      end, { noremap = true, silent = true, desc = 'Send diff review to Claude' })
     end
   },
 }
