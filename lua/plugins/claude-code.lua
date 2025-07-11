@@ -85,7 +85,9 @@ return {
         if is_modified then
           -- Get the modified content as review
           local lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
-          local content = "Code review for " .. tab_name .. ":\n\n" .. table.concat(lines, '\n')
+          local content = "Code review for your proposed change for " .. tab_name .. ":\n\n" .. 
+                         "This is your suggested diff that I modified with comments.\n\n" ..
+                         table.concat(lines, '\n')
           
           -- TODO: When implementing our own plugin, we should send content directly
           -- to Claude terminal instead of this temp file workaround. ClaudeCodeSend
@@ -93,9 +95,8 @@ return {
           local temp_file = vim.fn.tempname() .. "_review.txt"
           vim.fn.writefile(vim.split(content, '\n'), temp_file)
           
-          -- Add the temp file to Claude and then delete it
+          -- Add the temp file to Claude
           vim.cmd('ClaudeCodeAdd ' .. temp_file)
-          vim.fn.delete(temp_file)
           
           -- Auto-deny after sending review (optional)
           vim.defer_fn(function()
