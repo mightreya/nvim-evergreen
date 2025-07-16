@@ -12,6 +12,10 @@ map('n', 'gd', ':bp<bar>bd#<CR>', { noremap = true, silent = true })
 -- Open file's directory
 map('n', '<leader>of', ':!open %:h<CR>', { noremap = true, silent = true })
 
+-- Yank current buffer paths
+map('n', '<leader>yr', ':let @+ = expand("%")<CR>', { noremap = true, silent = true, desc = 'Yank relative path' })
+map('n', '<leader>ya', ':let @+ = expand("%:p")<CR>', { noremap = true, silent = true, desc = 'Yank absolute path' })
+
 -- New file creation with timestamp
 _G.new_file = function(filetype, prefix, extension)
   local timestamp = os.date("%Y%m%d_%H%M%S")
