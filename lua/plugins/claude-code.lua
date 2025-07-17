@@ -4,6 +4,57 @@ return {
     config = function()
       require('claudecode').setup()
       
+      -- Claude Code keybindings
+      local map = vim.keymap.set
+      map('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
+      map('n', '<leader>af', '<cmd>ClaudeCodeFocus<cr>', { noremap = true, silent = true, desc = 'Focus Claude Code' })
+      map('n', '<leader>aR', '<cmd>ClaudeCode --resume<cr>', { noremap = true, silent = true, desc = 'Resume Claude Code' })
+      map('n', '<leader>aC', '<cmd>ClaudeCode --continue<cr>', { noremap = true, silent = true, desc = 'Continue Claude Code' })
+      map('n', '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', { noremap = true, silent = true, desc = 'Add current buffer to Claude' })
+      map('v', '<leader>as', '<cmd>ClaudeCodeSend<cr>', { noremap = true, silent = true, desc = 'Send selection to Claude' })
+      map('n', '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', { noremap = true, silent = true, desc = 'Accept Claude diff' })
+      map('n', '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', { noremap = true, silent = true, desc = 'Deny Claude diff' })
+      
+      -- Code review workflow: send modified diff as review and then deny
+      map('n', '<leader>ar', function()
+        local current_buf = vim.api.nvim_get_current_buf()
+        local tab_name = vim.b[current_buf].claudecode_diff_tab_name
+        
+        if not tab_name then
+          vim.notify("No active diff found in current buffer", vim.log.levels.WARN)
+          return
+        end
+        
+        -- Check if buffer was modified
+        local is_modified = vim.api.nvim_buf_get_option(current_buf, "modified")
+        
+        if is_modified then
+          -- Get the modified content as review
+          local lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
+          local content = "Code review for your proposed change for " .. tab_name .. ":\n\n" .. 
+                         "This is your suggested diff that I modified with comments.\n\n" ..
+                         table.concat(lines, '\n')
+          
+          -- TODO: When implementing our own plugin, we should send content directly
+          -- to Claude terminal instead of this temp file workaround. ClaudeCodeSend
+          -- requires real file paths for at-mentions, so we use temp file approach.
+          local temp_file = vim.fn.tempname() .. "_review.txt"
+          vim.fn.writefile(vim.split(content, '\n'), temp_file)
+          
+          -- Add the temp file to Claude
+          vim.cmd('ClaudeCodeAdd ' .. temp_file)
+          
+          -- Auto-deny after sending review (optional)
+          vim.defer_fn(function()
+            vim.cmd('ClaudeCodeDiffDeny')
+          end, 100)  -- Small delay to ensure review is sent first
+          
+          vim.notify("Review sent to Claude and diff denied.", vim.log.levels.INFO)
+        else
+          vim.notify("No modifications found to send as review", vim.log.levels.WARN)
+        end
+      end, { noremap = true, silent = true, desc = 'Send diff review to Claude' })
+      
       -- Configure Claude Code buffers
       vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter", "TermOpen"}, {
         pattern = "*",
@@ -58,56 +109,35 @@ return {
         return original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file)
       end
       
-      -- Claude Code keybindings
-      local map = vim.keymap.set
-      map('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
-      map('n', '<leader>af', '<cmd>ClaudeCodeFocus<cr>', { noremap = true, silent = true, desc = 'Focus Claude Code' })
-      map('n', '<leader>aR', '<cmd>ClaudeCode --resume<cr>', { noremap = true, silent = true, desc = 'Resume Claude Code' })
-      map('n', '<leader>aC', '<cmd>ClaudeCode --continue<cr>', { noremap = true, silent = true, desc = 'Continue Claude Code' })
-      map('n', '<leader>ab', '<cmd>ClaudeCodeAdd %<cr>', { noremap = true, silent = true, desc = 'Add current buffer to Claude' })
-      map('v', '<leader>as', '<cmd>ClaudeCodeSend<cr>', { noremap = true, silent = true, desc = 'Send selection to Claude' })
-      map('n', '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', { noremap = true, silent = true, desc = 'Accept Claude diff' })
-      map('n', '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', { noremap = true, silent = true, desc = 'Deny Claude diff' })
-      
-      -- Code review workflow: send modified diff as review and then deny
-      map('n', '<leader>ar', function()
-        local current_buf = vim.api.nvim_get_current_buf()
-        local tab_name = vim.b[current_buf].claudecode_diff_tab_name
-        
-        if not tab_name then
-          vim.notify("No active diff found in current buffer", vim.log.levels.WARN)
-          return
+      -- Fix E37 error when buffer has unsaved changes
+      local original_setup_blocking_diff = diff_module._setup_blocking_diff
+      diff_module._setup_blocking_diff = function(params, resolution_callback)
+        -- Check if the file is already open in a modified buffer
+        local file_path = params.old_file_path
+        if vim.fn.filereadable(file_path) == 1 then
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+              local buf_name = vim.api.nvim_buf_get_name(buf)
+              if buf_name == file_path then
+                local modified = vim.api.nvim_buf_get_option(buf, "modified")
+                if modified then
+                  vim.notify("ClaudeCode: Cannot create diff for '" .. vim.fn.fnamemodify(file_path, ":t") .. 
+                             "' because it has unsaved changes. Please save or discard your changes first.", 
+                             vim.log.levels.WARN)
+                  error({
+                    code = -32000,
+                    message = "Buffer has unsaved changes",
+                    data = "The file '" .. file_path .. "' has unsaved changes. Please save or discard them before creating a diff."
+                  })
+                end
+              end
+            end
+          end
         end
         
-        -- Check if buffer was modified
-        local is_modified = vim.api.nvim_buf_get_option(current_buf, "modified")
-        
-        if is_modified then
-          -- Get the modified content as review
-          local lines = vim.api.nvim_buf_get_lines(current_buf, 0, -1, false)
-          local content = "Code review for your proposed change for " .. tab_name .. ":\n\n" .. 
-                         "This is your suggested diff that I modified with comments.\n\n" ..
-                         table.concat(lines, '\n')
-          
-          -- TODO: When implementing our own plugin, we should send content directly
-          -- to Claude terminal instead of this temp file workaround. ClaudeCodeSend
-          -- requires real file paths for at-mentions, so we use temp file approach.
-          local temp_file = vim.fn.tempname() .. "_review.txt"
-          vim.fn.writefile(vim.split(content, '\n'), temp_file)
-          
-          -- Add the temp file to Claude
-          vim.cmd('ClaudeCodeAdd ' .. temp_file)
-          
-          -- Auto-deny after sending review (optional)
-          vim.defer_fn(function()
-            vim.cmd('ClaudeCodeDiffDeny')
-          end, 100)  -- Small delay to ensure review is sent first
-          
-          vim.notify("Review sent to Claude and diff denied.", vim.log.levels.INFO)
-        else
-          vim.notify("No modifications found to send as review", vim.log.levels.WARN)
-        end
-      end, { noremap = true, silent = true, desc = 'Send diff review to Claude' })
+        -- Call original function if no unsaved changes
+        return original_setup_blocking_diff(params, resolution_callback)
+      end
     end
   },
 }
