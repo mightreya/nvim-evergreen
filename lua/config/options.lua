@@ -21,6 +21,9 @@ vim.opt.smartindent = true
 -- Search
 vim.opt.hlsearch = true
 
+-- Split behavior
+vim.opt.splitright = true
+
 -- Color scheme
 vim.o.background = 'dark'
 
