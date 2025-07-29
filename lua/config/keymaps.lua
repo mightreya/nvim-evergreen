@@ -44,6 +44,12 @@ map('n', '<leader>sh', '<cmd>lua require("lsp_signature").signature()<CR>', { no
 -- Terminal escape
 map('t', '<M-j>', '<C-\\><C-n>', { noremap = true, silent = true, desc = 'Exit terminal mode' })
 
+-- Gemini CLI
+map('n', '<leader>ag', function()
+  local shell = vim.fn.has('mac') == 1 and 'zsh' or 'bash'
+  vim.cmd('vsplit term://' .. shell .. ' -c gemini')
+end, { noremap = true, silent = true, desc = 'Open Gemini CLI' })
+
 -- Wiki navigation hotkeys
 map('n', '<leader>ww', ':e ~/wiki/index.md<CR>', { noremap = true, silent = true, desc = 'Open wiki index' })
 map('n', '<leader>wh', ':e ~/wiki/hm/index.md<CR>', { noremap = true, silent = true, desc = 'Open HM wiki' })
