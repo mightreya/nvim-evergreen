@@ -16,19 +16,26 @@ map('n', '<leader>of', ':!open %:h<CR>', { noremap = true, silent = true })
 map('n', '<leader>yr', ':let @+ = expand("%")<CR>', { noremap = true, silent = true, desc = 'Yank relative path' })
 map('n', '<leader>ya', ':let @+ = expand("%:p")<CR>', { noremap = true, silent = true, desc = 'Yank absolute path' })
 
--- New file creation with timestamp
+-- New file creation with timestamp in .docs folder
 _G.new_file = function(filetype, prefix, extension)
   local timestamp = os.date("%Y%m%d_%H%M%S")
-  local filename = string.format("%s_%s%s", prefix, timestamp, extension)
+  local docs_dir = ".docs"
+  
+  -- Create .docs directory if it doesn't exist
+  if vim.fn.isdirectory(docs_dir) == 0 then
+    vim.fn.mkdir(docs_dir, "p")
+  end
+  
+  local filename = string.format("%s/%s_%s%s", docs_dir, prefix, timestamp, extension)
   vim.cmd("enew")
   vim.cmd("setfiletype " .. filetype)
   vim.cmd("file " .. filename)
 end
 
-map('n', '<leader>np', ":lua _G.new_file('python', 'python_file', '.py')<CR>", { noremap = true, silent = true })
-map('n', '<leader>ns', ":lua _G.new_file('swift', 'swift_file', '.swift')<CR>", { noremap = true, silent = true })
-map('n', '<leader>nm', ":lua _G.new_file('markdown', 'markdown_file', '.md')<CR>", { noremap = true, silent = true })
-map('n', '<leader>nc', ":lua _G.new_file('supercollider', 'supercollider_file', '.scd')<CR>", { noremap = true, silent = true })
+map('n', '<leader>np', ":lua _G.new_file('python', 'snippet', '.py')<CR>", { noremap = true, silent = true })
+map('n', '<leader>ns', ":lua _G.new_file('swift', 'snippet', '.swift')<CR>", { noremap = true, silent = true })
+map('n', '<leader>nm', ":lua _G.new_file('markdown', 'note', '.md')<CR>", { noremap = true, silent = true })
+map('n', '<leader>nc', ":lua _G.new_file('supercollider', 'snippet', '.scd')<CR>", { noremap = true, silent = true })
 
 -- Formatting shortcuts
 map('n', '<leader>jf', ':Neoformat json<CR>', { noremap = true, silent = true })

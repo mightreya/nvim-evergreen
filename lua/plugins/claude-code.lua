@@ -70,8 +70,8 @@ return {
             vim.api.nvim_win_set_width(0, math.floor(screen_width * 0.5))
             -- Disable sign column for more space
             vim.wo.signcolumn = "no"
-            -- Disable wrap for long lines
-            vim.wo.wrap = false
+            -- Enable wrap for long lines
+            vim.wo.wrap = true
           else
             -- Reset to user's defaults for non-Claude buffers
             vim.wo.number = vim.o.number
