@@ -28,6 +28,13 @@ return {
           width = 0.5,
           winbar = true,
         },
+        -- Override Snacks window options to allow resizing
+        win = {
+          wo = {
+            winfixwidth = false,
+            winfixheight = false,
+          },
+        },
         -- Telescope picker configuration
         picker = {
           prompt_title = "Gemini CLI Commands",

@@ -112,3 +112,24 @@ autocmd("TermOpen", {
     vim.wo.cursorcolumn = false
   end,
 })
+
+-- AI terminal windows (Claude Code and Gemini) always use relative numbers
+augroup("AITerminalNumbers", { clear = true })
+autocmd({"BufEnter", "BufWinEnter", "TermOpen", "WinEnter"}, {
+  group = "AITerminalNumbers",
+  pattern = "*",
+  callback = function()
+    local buf_name = vim.api.nvim_buf_get_name(0)
+    -- Match Claude and Gemini terminal buffers
+    -- Claude: terminal buffer running claude command
+    -- Gemini: terminal buffer running gemini command
+    if vim.bo.buftype == 'terminal' and (buf_name:match("claude") or buf_name:match("gemini")) then
+      vim.wo.number = true
+      vim.wo.relativenumber = true
+      vim.wo.wrap = true
+      -- Allow window resizing with C-w =
+      vim.wo.winfixwidth = false
+      vim.wo.winfixheight = false
+    end
+  end,
+})

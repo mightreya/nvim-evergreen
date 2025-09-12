@@ -2,7 +2,15 @@ return {
   {
     "coder/claudecode.nvim",
     config = function()
-      require('claudecode').setup()
+      require('claudecode').setup({
+        -- Auto-focus terminal after sending content
+        focus_after_send = true,
+        -- Enhanced diff options
+        diff_opts = {
+          keep_terminal_focus = true,  -- Stay in terminal when diff opens
+          on_new_file_reject = "close_window",  -- Close empty buffers when rejecting
+        },
+      })
       
       -- Claude Code keybindings
       local map = vim.keymap.set
@@ -14,6 +22,9 @@ return {
       map('v', '<leader>as', '<cmd>ClaudeCodeSend<cr>', { noremap = true, silent = true, desc = 'Send selection to Claude' })
       map('n', '<leader>aa', '<cmd>ClaudeCodeDiffAccept<cr>', { noremap = true, silent = true, desc = 'Accept Claude diff' })
       map('n', '<leader>ad', '<cmd>ClaudeCodeDiffDeny<cr>', { noremap = true, silent = true, desc = 'Deny Claude diff' })
+      map('n', '<leader>am', '<cmd>ClaudeCodeSelectModel<cr>', { noremap = true, silent = true, desc = 'Select Claude model' })
+      map('n', '<leader>at', '<cmd>ClaudeCodeTreeAdd .<cr>', { noremap = true, silent = true, desc = 'Add directory tree to Claude' })
+      map('n', '<leader>aS', '<cmd>ClaudeCodeStatus<cr>', { noremap = true, silent = true, desc = 'Claude Code status' })
       
       -- Code review workflow: send modified diff as review and then deny
       map('n', '<leader>ar', function()
@@ -55,27 +66,18 @@ return {
         end
       end, { noremap = true, silent = true, desc = 'Send diff review to Claude' })
       
-      -- Configure Claude Code buffers
+      -- Configure Claude Code window width
       vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter", "TermOpen"}, {
         pattern = "*",
         callback = function()
           local buf_name = vim.api.nvim_buf_get_name(0)
           -- Match Claude terminal buffers (e.g., term://.../.claude/...)
           if buf_name:match("%.claude/") or buf_name:match("/claude%[") then
-            -- Enable relative line numbers for quick navigation (5j, 10k, etc.)
-            vim.wo.number = true
-            vim.wo.relativenumber = true
             -- Set window width to 50% of screen
             local screen_width = vim.o.columns
             vim.api.nvim_win_set_width(0, math.floor(screen_width * 0.5))
             -- Disable sign column for more space
             vim.wo.signcolumn = "no"
-            -- Enable wrap for long lines
-            vim.wo.wrap = true
-          else
-            -- Reset to user's defaults for non-Claude buffers
-            vim.wo.number = vim.o.number
-            vim.wo.relativenumber = vim.o.relativenumber
           end
         end
       })
@@ -109,35 +111,7 @@ return {
         return original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file)
       end
       
-      -- Fix E37 error when buffer has unsaved changes
-      local original_setup_blocking_diff = diff_module._setup_blocking_diff
-      diff_module._setup_blocking_diff = function(params, resolution_callback)
-        -- Check if the file is already open in a modified buffer
-        local file_path = params.old_file_path
-        if vim.fn.filereadable(file_path) == 1 then
-          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-            if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
-              local buf_name = vim.api.nvim_buf_get_name(buf)
-              if buf_name == file_path then
-                local modified = vim.api.nvim_buf_get_option(buf, "modified")
-                if modified then
-                  vim.notify("ClaudeCode: Cannot create diff for '" .. vim.fn.fnamemodify(file_path, ":t") .. 
-                             "' because it has unsaved changes. Please save or discard your changes first.", 
-                             vim.log.levels.WARN)
-                  error({
-                    code = -32000,
-                    message = "Buffer has unsaved changes",
-                    data = "The file '" .. file_path .. "' has unsaved changes. Please save or discard them before creating a diff."
-                  })
-                end
-              end
-            end
-          end
-        end
-        
-        -- Call original function if no unsaved changes
-        return original_setup_blocking_diff(params, resolution_callback)
-      end
+      -- E37 error fix removed - now handled upstream in diff.lua
     end
   },
 }

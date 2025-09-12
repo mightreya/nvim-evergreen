@@ -5,6 +5,7 @@ vim.g.maplocalleader = ","
 -- UI settings
 vim.opt.number = true
 vim.opt.termguicolors = true
+vim.opt.wrap = true
 vim.opt.showcmd = false
 vim.opt.laststatus = 2
 vim.opt.fillchars = { stl = ' ', stlnc = ' ' }
