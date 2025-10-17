@@ -1,96 +1,92 @@
 # Neovim Evergreen
 
-This repository holds a modern, feature-rich, and efficient Neovim configuration for developers. With powerful tools such as LSP, Treesitter, autocompletion, and more, it enhances your coding experience across various languages and platforms.
+Modern Neovim configuration with LSP, AI assistants, and efficient workflows.
 
 ## Prerequisites
 
-Ensure you have the following installed on your system:
-
-- Neovim (v0.5.0 or newer)
+- Neovim 0.10+
 - Git
-- Node.js (required for some LSP servers)
+- Node.js (for LSP servers)
+- [Claude CLI](https://claude.com/cli)
+- [Gemini CLI](https://github.com/marcinjahn/gemini-cli) (optional)
 
 ## Installation
 
-1. Backup your existing Neovim configuration if necessary:
-
 ```sh
+# Backup existing config
 mv ~/.config/nvim ~/.config/nvim.backup
+
+# Clone this repo
+git clone https://github.com/mightreya/nvim-evergreen.git ~/.config/nvim
+
+# Open Neovim - plugins auto-install via lazy.nvim
+nvim
 ```
-
-2. Clone this repository into your Neovim config directory:
-
-```sh
-git clone https://github.com/yourusername/neovim-config.git ~/.config/nvim
-```
-
-3. Install the required Node.js global packages for LSP servers:
-
-```sh
-npm install -g pyright sourcekit omnisharp gopls typescript typescript-language-server vscode-html-languageserver-bin vscode-css-languageserver-bin tailwindcss-language-server vscode-json-languageserver
-```
-
-4. Install isort, black, and other formatting tools for Python:
-
-```sh
-pip install isort black
-```
-
-5. Install eslint and eslint_d for JavaScript formatting:
-
-```sh
-npm install -g eslint eslint_d
-```
-
-6. Open Neovim and run the following command to install the plugins:
-
-```vim
-:PackerInstall
-```
-
-7. Restart Neovim and enjoy your new configuration!
 
 ## Features
 
-Our Neovim configuration comes packed with a range of features to boost your productivity:
+### AI Integration
+- **Claude Code** - Native terminal integration with context-aware coding assistance
+- **Gemini CLI** - Alternative AI assistant support
 
-- Language Server Protocol (LSP) support for various languages including Python, Swift, C#, Golang, TypeScript, HTML, JS, React, LitElement, and more.
-- Autocompletion powered by nvim-cmp.
-- Code snippets provided by LuaSnip.
-- Auto-formatting via Neoformat.
-- Efficient surround management with vim-surround.
-- Easy code commenting using nvim-comment.
-- Indentation guides offered by indent-blankline.
-- File and content search capabilities through Telescope and fzf integration.
-- Git integration using Gitsigns.
-- Buffer management with nvim-bufferline.
-- Hex code, RGB, and other color codes visualized by nvim-colorizer.lua.
-- Syntax highlighting using Treesitter.
-- Auto-closing HTML/XML tags with nvim-ts-autotag.
-- Linters and real-time error checking via ALE.
-- File overview through symbols-outline.nvim.
-- Support for EditorConfig.
-- Note-taking with Vimwiki.
-- LSP function signature help.
-- Stunning Gruvbox color scheme.
-- GitHub Copilot integration for AI-powered code suggestions.
+### Core
+- LSP via Mason and nvim-lspconfig
+- Autocompletion with nvim-cmp
+- Treesitter syntax highlighting
+- Telescope fuzzy finder
+- Git integration (gitsigns, fugitive)
 
-## Nerd Font (optional)
+### Editor
+- Auto-pairs and surround
+- Comment toggling
+- Indent guides
+- Colorizer for color codes
+- Multiple cursors
+- WhichKey for keybinding help
 
-For an optimized experience, we recommend using a Nerd Font, such as 'FiraCode Nerd Font'. Download it from the [Nerd Fonts repository](https://github.com/ryanoasis/nerd-fonts).
+### Language Support
+- Python, JavaScript/TypeScript, Go, Rust, Lua
+- HTML/CSS/Tailwind
+- SuperCollider
+
+## Key Bindings
+
+### Claude Code
+- `<leader>ac` - Toggle Claude terminal
+- `<leader>af` - Focus Claude terminal
+- `<leader>ab` - Add current buffer to Claude
+- `<leader>as` - Send visual selection to Claude
+- `<leader>aa` - Accept diff
+- `<leader>ad` - Deny diff
+
+### General
+- `<leader>ff` - Find files
+- `<leader>fg` - Live grep
+- `<leader>fb` - Browse buffers
+- `<leader>gg` - Toggle Gemini
+
+## Configuration Structure
+
+```
+~/.config/nvim/
+├── init.lua              # Entry point
+└── lua/
+    └── plugins/
+        ├── claude-code.lua
+        ├── lsp.lua
+        ├── completion.lua
+        ├── treesitter.lua
+        ├── telescope.lua
+        ├── git.lua
+        ├── editor.lua
+        ├── ui.lua
+        └── ...
+```
 
 ## Customization
 
-Feel free to edit the `init.lua` file in the `~/.config/nvim/` directory to adjust the configuration to your personal preferences.
+Edit files in `lua/plugins/` to customize plugin configurations.
 
-Here's a shortened version of the "How it Works" section:
+## Author
 
-## How it Works
-
-Your Neovim configuration is governed by the `init.lua` file, packed with plugins that enhance your coding environment. These include features like LSPs, autocompletion, code snippets, auto-formatting, Git integration, syntax highlighting, linting and error checking, and more, even incorporating GitHub Copilot, your AI pair programmer.
-
-The `init.lua` file in the repository provides detailed configuration settings and mappings for all these features. For an in-depth understanding, please refer to it. Enjoy your enriched coding experience!
-
-## About the Author
-
-[Konstantin Alexandrov](https://mightreya.com) is the founder of Mightreya AB. His current work revolves around Taûg, an AI-powered technology that seeks to transform personal nutrition tracking using depth map technologies. Anticipated for widespread release soon, Taûg promises a new era of simplicity and precision in monitoring calorie and macronutrient intake.
+[Konstantin Alexandrov](https://mightreya.com) - Founder of Mightreya AB
