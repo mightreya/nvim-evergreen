@@ -18,6 +18,15 @@ return {
         },
       })
 
+      -- Add background color for Claude terminal like Snacks had
+      vim.api.nvim_create_autocmd({"TermOpen", "BufEnter"}, {
+        pattern = "term://*claude*",
+        callback = function()
+          -- Use NormalFloat background (same as floating windows)
+          vim.wo.winhighlight = "Normal:NormalFloat,NormalNC:NormalFloat"
+        end
+      })
+
       -- Claude Code keybindings
       local map = vim.keymap.set
       map('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
