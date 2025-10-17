@@ -89,30 +89,6 @@ autocmd("BufWritePre", {
   end,
 })
 
--- Handle cursor visibility for terminal vs normal windows
-augroup("TerminalCursor", { clear = true })
-autocmd("WinEnter", {
-  group = "TerminalCursor",
-  pattern = "*",
-  callback = function()
-    if vim.bo.buftype == 'terminal' then
-      vim.wo.cursorline = false
-      vim.wo.cursorcolumn = false
-    else
-      vim.wo.cursorline = true
-      vim.wo.cursorcolumn = true
-    end
-  end,
-})
-autocmd("TermOpen", {
-  group = "TerminalCursor",
-  pattern = "*",
-  callback = function()
-    vim.wo.cursorline = false
-    vim.wo.cursorcolumn = false
-  end,
-})
-
 -- AI terminal windows (Claude Code and Gemini) always use relative numbers
 augroup("AITerminalNumbers", { clear = true })
 autocmd({"BufEnter", "BufWinEnter", "TermOpen", "WinEnter"}, {
