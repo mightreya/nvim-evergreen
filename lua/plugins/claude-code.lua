@@ -10,32 +10,11 @@ return {
           keep_terminal_focus = true,  -- Stay in terminal when diff opens
           on_new_file_reject = "close_window",  -- Close empty buffers when rejecting
         },
-        -- Terminal configuration with Snacks.nvim customization
+        -- Terminal configuration
         terminal = {
-          provider = "auto",  -- Uses Snacks if available, falls back to native
+          provider = "native",
           split_side = "right",
           split_width_percentage = 0.5,
-          -- Configure Snacks - keep nice styling, fix functional issues
-          snacks_win_opts = {
-            fixbuf = false,  -- Allow buffer commands to work normally
-            width = 0.5,     -- Set 50% width directly in Snacks config
-            resize = false,  -- Prevent Snacks from resizing automatically
-            -- Window options - override minimal defaults only where needed
-            wo = {
-              number = true,
-              relativenumber = true,
-              signcolumn = "yes",
-            },
-            -- Buffer options (bo) for terminal
-            bo = {
-              modifiable = true,  -- Keep terminal buffer modifiable
-            },
-            -- Custom key mappings - disable problematic Snacks keys
-            keys = {
-              q = false,  -- Don't close on 'q'
-              ["<C-c>"] = false,  -- Don't intercept Ctrl-C
-            },
-          },
         },
       })
 
