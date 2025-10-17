@@ -10,8 +10,35 @@ return {
           keep_terminal_focus = true,  -- Stay in terminal when diff opens
           on_new_file_reject = "close_window",  -- Close empty buffers when rejecting
         },
+        -- Terminal configuration with Snacks.nvim customization
+        terminal = {
+          provider = "auto",  -- Uses Snacks if available, falls back to native
+          split_side = "right",
+          split_width_percentage = 0.5,
+          -- Configure Snacks - keep nice styling, fix functional issues
+          snacks_win_opts = {
+            fixbuf = false,  -- Allow buffer commands to work normally
+            width = 0.5,     -- Set 50% width directly in Snacks config
+            resize = false,  -- Prevent Snacks from resizing automatically
+            -- Window options - override minimal defaults only where needed
+            wo = {
+              number = true,
+              relativenumber = true,
+              signcolumn = "yes",
+            },
+            -- Buffer options (bo) for terminal
+            bo = {
+              modifiable = true,  -- Keep terminal buffer modifiable
+            },
+            -- Custom key mappings - disable problematic Snacks keys
+            keys = {
+              q = false,  -- Don't close on 'q'
+              ["<C-c>"] = false,  -- Don't intercept Ctrl-C
+            },
+          },
+        },
       })
-      
+
       -- Claude Code keybindings
       local map = vim.keymap.set
       map('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
@@ -65,22 +92,6 @@ return {
           vim.notify("No modifications found to send as review", vim.log.levels.WARN)
         end
       end, { noremap = true, silent = true, desc = 'Send diff review to Claude' })
-      
-      -- Configure Claude Code window width
-      vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter", "TermOpen"}, {
-        pattern = "*",
-        callback = function()
-          local buf_name = vim.api.nvim_buf_get_name(0)
-          -- Match Claude terminal buffers (e.g., term://.../.claude/...)
-          if buf_name:match("%.claude/") or buf_name:match("/claude%[") then
-            -- Set window width to 50% of screen
-            local screen_width = vim.o.columns
-            vim.api.nvim_win_set_width(0, math.floor(screen_width * 0.5))
-            -- Disable sign column for more space
-            vim.wo.signcolumn = "no"
-          end
-        end
-      })
       
       -- Fix buffer naming collision in diff.lua
       local diff_module = require('claudecode.diff')
