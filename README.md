@@ -87,6 +87,10 @@ nvim
 
 Edit files in `lua/plugins/` to customize plugin configurations.
 
+## Nerd Fonts
+
+For optimal icon display, use a Nerd Font like [FiraCode Nerd Font](https://github.com/ryanoasis/nerd-fonts).
+
 ## Author
 
 [Konstantin Alexandrov](https://mightreya.com) - Founder of Mightreya AB
