@@ -18,15 +18,12 @@ return {
         },
       })
 
-      -- Add background color and cursor for Claude terminal
-      vim.api.nvim_create_autocmd({"TermOpen", "BufEnter", "WinEnter"}, {
+      -- Add background color for Claude terminal
+      vim.api.nvim_create_autocmd({"TermOpen", "BufEnter"}, {
         pattern = "term://*claude*",
         callback = function()
           -- Use NormalFloat background (same as floating windows)
           vim.wo.winhighlight = "Normal:NormalFloat,NormalNC:NormalFloat"
-          -- Enable cursor like normal buffers
-          vim.wo.cursorline = true
-          vim.wo.cursorcolumn = true
         end
       })
 

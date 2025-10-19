@@ -103,8 +103,6 @@ autocmd({"BufEnter", "BufWinEnter", "TermOpen", "WinEnter"}, {
       vim.wo.number = true
       vim.wo.relativenumber = true
       vim.wo.wrap = true
-      vim.wo.cursorline = true
-      vim.wo.cursorcolumn = true
       -- Allow window resizing with C-w =
       vim.wo.winfixwidth = false
       vim.wo.winfixheight = false
