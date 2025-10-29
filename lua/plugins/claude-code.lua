@@ -84,7 +84,7 @@ return {
       -- Fix buffer naming collision in diff.lua
       local diff_module = require('claudecode.diff')
       local original_create_diff_view = diff_module._create_diff_view_from_window
-      diff_module._create_diff_view_from_window = function(target_window, old_file_path, new_buffer, tab_name, is_new_file)
+      diff_module._create_diff_view_from_window = function(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
         if is_new_file then
           -- Override buffer naming to avoid collisions
           local original_set_name = vim.api.nvim_buf_set_name
@@ -100,17 +100,15 @@ return {
             end
             return original_set_name(buf, name)
           end
-          
-          local result = original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file)
-          
+
+          local result = original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
+
           -- Restore original function
           vim.api.nvim_buf_set_name = original_set_name
           return result
         end
-        return original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file)
+        return original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
       end
-      
-      -- E37 error fix removed - now handled upstream in diff.lua
     end
   },
 }
