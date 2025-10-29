@@ -30,6 +30,9 @@ vim.opt.hlsearch = true
 -- Split behavior
 vim.opt.splitright = true
 
+-- Diff settings
+vim.opt.diffopt:append("followwrap")
+
 -- Color scheme
 vim.o.background = 'dark'
 

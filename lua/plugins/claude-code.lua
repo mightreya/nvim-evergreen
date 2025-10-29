@@ -27,16 +27,6 @@ return {
         end
       })
 
-      -- Enable wrap for Claude Code diff buffers
-      vim.api.nvim_create_autocmd("OptionSet", {
-        pattern = "diff",
-        callback = function()
-          if vim.wo.diff and vim.b.claudecode_diff_tab_name then
-            vim.wo.wrap = true
-          end
-        end
-      })
-
       -- Claude Code keybindings
       local map = vim.keymap.set
       map('n', '<leader>ac', '<cmd>ClaudeCode<cr>', { noremap = true, silent = true, desc = 'Toggle Claude Code' })
