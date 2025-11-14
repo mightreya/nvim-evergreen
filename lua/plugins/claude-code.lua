@@ -81,14 +81,14 @@ return {
         end
       end, { noremap = true, silent = true, desc = 'Send diff review to Claude' })
       
-      -- Fix buffer naming collision in diff.lua
       local diff_module = require('claudecode.diff')
+
+      -- Fix buffer naming collision for NEW FILE diffs
       local original_create_diff_view = diff_module._create_diff_view_from_window
       diff_module._create_diff_view_from_window = function(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
         if is_new_file then
-          -- Override buffer naming to avoid collisions
           local original_set_name = vim.api.nvim_buf_set_name
-          vim.api.nvim_buf_set_name = function(buf, name)
+          vim.api.nvim_buf_set_name = function(buffer, name)
             if name:match(" %(NEW FILE%)$") then
               local unique_name = name
               local counter = 1
@@ -96,18 +96,51 @@ return {
                 unique_name = name:gsub(" %(NEW FILE%)$", " (NEW FILE " .. counter .. ")")
                 counter = counter + 1
               end
-              return original_set_name(buf, unique_name)
+              return original_set_name(buffer, unique_name)
             end
-            return original_set_name(buf, name)
+            return original_set_name(buffer, name)
           end
 
           local result = original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
-
-          -- Restore original function
           vim.api.nvim_buf_set_name = original_set_name
           return result
         end
         return original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
+      end
+
+      -- Auto-cleanup diff buffers immediately after accept/reject
+      -- The plugin waits for close_tab call that never comes (schema=nil, not exposed via MCP)
+      local function cleanup_and_focus_terminal(tab_name)
+        diff_module.close_diff_by_tab_name(tab_name)
+
+        -- Restore focus to Claude terminal
+        local terminal_module = require('claudecode.terminal')
+        local terminal_bufnr = terminal_module.get_active_terminal_bufnr()
+        if terminal_bufnr then
+          for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.api.nvim_win_get_buf(win) == terminal_bufnr then
+              vim.api.nvim_set_current_win(win)
+              vim.cmd('startinsert')
+              break
+            end
+          end
+        end
+      end
+
+      local original_resolve_saved = diff_module._resolve_diff_as_saved
+      diff_module._resolve_diff_as_saved = function(tab_name, buffer_id)
+        original_resolve_saved(tab_name, buffer_id)
+        vim.defer_fn(function()
+          cleanup_and_focus_terminal(tab_name)
+        end, 100)
+      end
+
+      local original_resolve_rejected = diff_module._resolve_diff_as_rejected
+      diff_module._resolve_diff_as_rejected = function(tab_name)
+        original_resolve_rejected(tab_name)
+        vim.defer_fn(function()
+          cleanup_and_focus_terminal(tab_name)
+        end, 100)
       end
     end
   },
