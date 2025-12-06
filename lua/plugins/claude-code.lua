@@ -83,6 +83,26 @@ return {
       
       local diff_module = require('claudecode.diff')
 
+      local function find_terminal_window()
+        local terminal_module = require('claudecode.terminal')
+        local terminal_bufnr = terminal_module.get_active_terminal_bufnr()
+        if terminal_bufnr then
+          for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.api.nvim_win_get_buf(win) == terminal_bufnr then
+              return win
+            end
+          end
+        end
+      end
+
+      local function resize_terminal(percentage)
+        local term_win = find_terminal_window()
+        if term_win then
+          local width = math.floor(vim.o.columns * percentage)
+          pcall(vim.api.nvim_win_set_width, term_win, width)
+        end
+      end
+
       -- Fix buffer naming collision for NEW FILE diffs
       local original_create_diff_view = diff_module._create_diff_view_from_window
       diff_module._create_diff_view_from_window = function(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
@@ -103,27 +123,54 @@ return {
 
           local result = original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
           vim.api.nvim_buf_set_name = original_set_name
+
+          -- Shrink terminal after diff windows are created
+          vim.schedule(function()
+            resize_terminal(0.30)
+          end)
+
           return result
         end
-        return original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
+
+        local result = original_create_diff_view(target_window, old_file_path, new_buffer, tab_name, is_new_file, terminal_win_in_new_tab, existing_buffer)
+
+        -- Shrink terminal after diff windows are created
+        vim.schedule(function()
+          resize_terminal(0.30)
+        end)
+
+        return result
       end
 
       -- Auto-cleanup diff buffers immediately after accept/reject
       -- The plugin waits for close_tab call that never comes (schema=nil, not exposed via MCP)
       local function cleanup_and_focus_terminal(tab_name)
+        local active_diffs = diff_module._get_active_diffs()
+        local diff_state = active_diffs[tab_name]
+
+        -- Capture buffer IDs before cleanup
+        local new_buffer = diff_state and diff_state.new_buffer
+        local original_buffer = diff_state and diff_state.original_buffer
+        local is_new_file = diff_state and diff_state.is_new_file
+
         diff_module.close_diff_by_tab_name(tab_name)
 
+        -- Force delete any remaining buffers
+        if new_buffer and vim.api.nvim_buf_is_valid(new_buffer) then
+          pcall(vim.api.nvim_buf_delete, new_buffer, { force = true })
+        end
+        if is_new_file and original_buffer and vim.api.nvim_buf_is_valid(original_buffer) then
+          pcall(vim.api.nvim_buf_delete, original_buffer, { force = true })
+        end
+
+        -- Expand terminal back to 50% after diff closes
+        resize_terminal(0.50)
+
         -- Restore focus to Claude terminal
-        local terminal_module = require('claudecode.terminal')
-        local terminal_bufnr = terminal_module.get_active_terminal_bufnr()
-        if terminal_bufnr then
-          for _, win in ipairs(vim.api.nvim_list_wins()) do
-            if vim.api.nvim_win_get_buf(win) == terminal_bufnr then
-              vim.api.nvim_set_current_win(win)
-              vim.cmd('startinsert')
-              break
-            end
-          end
+        local term_win = find_terminal_window()
+        if term_win then
+          vim.api.nvim_set_current_win(term_win)
+          vim.cmd('startinsert')
         end
       end
 
