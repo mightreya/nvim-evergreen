@@ -42,3 +42,6 @@ luac.out
 # Neovim plugin manager generated files
 plugin/packer_compiled.lua
 
+# Auto-generated research / scratch
+.docs/
+

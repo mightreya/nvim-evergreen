@@ -83,12 +83,30 @@ return {
       
       local diff_module = require('claudecode.diff')
 
+      -- Toggle to dump cleanup traces to :messages. Set true to debug, false for normal use.
+      local DEBUG_CLEANUP = false
+      local function dbg(msg)
+        if DEBUG_CLEANUP then
+          vim.notify('[claudecode-patch] ' .. msg, vim.log.levels.INFO)
+        end
+      end
+
       local function find_terminal_window()
         local terminal_module = require('claudecode.terminal')
         local terminal_bufnr = terminal_module.get_active_terminal_bufnr()
         if terminal_bufnr then
           for _, win in ipairs(vim.api.nvim_list_wins()) do
             if vim.api.nvim_win_get_buf(win) == terminal_bufnr then
+              return win
+            end
+          end
+        end
+        -- Fallback: scan windows for any terminal buffer whose name contains "claude"
+        for _, win in ipairs(vim.api.nvim_list_wins()) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          if vim.api.nvim_buf_get_option(buf, 'buftype') == 'terminal' then
+            local name = vim.api.nvim_buf_get_name(buf)
+            if name:match('claude') then
               return win
             end
           end
@@ -142,33 +160,24 @@ return {
         return result
       end
 
-      -- Auto-cleanup diff buffers immediately after accept/reject
-      -- The plugin waits for close_tab call that never comes (schema=nil, not exposed via MCP)
+      -- Trigger upstream cleanup after user-initiated accept/reject.
+      -- Upstream _resolve_diff_as_saved/_rejected only set status; they wait for
+      -- a close_tab MCP call that never arrives (schema=nil, internal-only tool).
+      -- close_diff_by_tab_name drives _cleanup_diff_state which (since PR #175 + buffer
+      -- force-delete) handles windows, buffers, and active_diffs state. We still own
+      -- terminal refocus — upstream keep_terminal_focus only applies at diff-open time.
       local function cleanup_and_focus_terminal(tab_name)
-        local active_diffs = diff_module._get_active_diffs()
-        local diff_state = active_diffs[tab_name]
-
-        -- Capture buffer IDs before cleanup
-        local new_buffer = diff_state and diff_state.new_buffer
-        local original_buffer = diff_state and diff_state.original_buffer
-        local is_new_file = diff_state and diff_state.is_new_file
-
-        diff_module.close_diff_by_tab_name(tab_name)
-
-        -- Force delete any remaining buffers
-        if new_buffer and vim.api.nvim_buf_is_valid(new_buffer) then
-          pcall(vim.api.nvim_buf_delete, new_buffer, { force = true })
-        end
-        if is_new_file and original_buffer and vim.api.nvim_buf_is_valid(original_buffer) then
-          pcall(vim.api.nvim_buf_delete, original_buffer, { force = true })
+        dbg('cleanup: tab=' .. tostring(tab_name))
+        local ok, err = pcall(diff_module.close_diff_by_tab_name, tab_name)
+        if not ok then
+          dbg('close_diff_by_tab_name raised: ' .. tostring(err))
         end
 
-        -- Expand terminal back to 50% after diff closes
         resize_terminal(0.50)
 
-        -- Restore focus to Claude terminal
         local term_win = find_terminal_window()
-        if term_win then
+        dbg('term_win=' .. tostring(term_win))
+        if term_win and vim.api.nvim_win_is_valid(term_win) then
           vim.api.nvim_set_current_win(term_win)
           vim.cmd('startinsert')
         end
@@ -176,18 +185,20 @@ return {
 
       local original_resolve_saved = diff_module._resolve_diff_as_saved
       diff_module._resolve_diff_as_saved = function(tab_name, buffer_id)
+        dbg('resolve_saved: tab=' .. tostring(tab_name))
         original_resolve_saved(tab_name, buffer_id)
-        vim.defer_fn(function()
+        vim.schedule(function()
           cleanup_and_focus_terminal(tab_name)
-        end, 100)
+        end)
       end
 
       local original_resolve_rejected = diff_module._resolve_diff_as_rejected
       diff_module._resolve_diff_as_rejected = function(tab_name)
+        dbg('resolve_rejected: tab=' .. tostring(tab_name))
         original_resolve_rejected(tab_name)
-        vim.defer_fn(function()
+        vim.schedule(function()
           cleanup_and_focus_terminal(tab_name)
-        end, 100)
+        end)
       end
     end
   },
