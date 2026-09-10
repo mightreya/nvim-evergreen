@@ -89,17 +89,15 @@ autocmd("BufWritePre", {
   end,
 })
 
--- AI terminal windows (Claude Code and Gemini) always use relative numbers
+-- AI terminal windows always use relative numbers
 augroup("AITerminalNumbers", { clear = true })
 autocmd({"BufEnter", "BufWinEnter", "TermOpen", "WinEnter"}, {
   group = "AITerminalNumbers",
   pattern = "*",
   callback = function()
     local buf_name = vim.api.nvim_buf_get_name(0)
-    -- Match Claude and Gemini terminal buffers
-    -- Claude: terminal buffer running claude command
-    -- Gemini: terminal buffer running gemini command
-    if vim.bo.buftype == 'terminal' and (buf_name:match("claude") or buf_name:match("gemini")) then
+    if vim.bo.buftype == 'terminal'
+      and (buf_name:match("claude") or buf_name:match("gemini") or buf_name:match("codex")) then
       vim.wo.number = true
       vim.wo.relativenumber = true
       vim.wo.wrap = true
