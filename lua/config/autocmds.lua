@@ -70,11 +70,11 @@ autocmd("BufReadCmd", {
 })
 
 -- Neoformat helper function
-_G.try_format = function()
-    local succeeded, result = pcall(vim.cmd, 'Neoformat')
-    if not succeeded then
-        print('Formatter not defined for this filetype, saving without formatting.')
-    end
+local function _try_format()
+  local succeeded = pcall(vim.cmd, "Neoformat")
+  if not succeeded then
+    vim.notify("Formatter not defined for this filetype, saving without formatting.", vim.log.levels.INFO)
+  end
 end
 
 -- Format non-Python files with Neoformat on save
@@ -83,23 +83,21 @@ autocmd("BufWritePre", {
   group = "NonPythonFormatting",
   pattern = "*",
   callback = function()
-    if vim.bo.filetype ~= 'python' then
-      _G.try_format()
+    if vim.bo.buftype == "" and vim.bo.modifiable and vim.bo.filetype ~= "python" then
+      _try_format()
     end
   end,
 })
 
--- AI terminal windows (Claude Code and Gemini) always use relative numbers
+-- AI terminal windows always use relative numbers
 augroup("AITerminalNumbers", { clear = true })
 autocmd({"BufEnter", "BufWinEnter", "TermOpen", "WinEnter"}, {
   group = "AITerminalNumbers",
   pattern = "*",
   callback = function()
     local buf_name = vim.api.nvim_buf_get_name(0)
-    -- Match Claude and Gemini terminal buffers
-    -- Claude: terminal buffer running claude command
-    -- Gemini: terminal buffer running gemini command
-    if vim.bo.buftype == 'terminal' and (buf_name:match("claude") or buf_name:match("gemini")) then
+    if vim.bo.buftype == 'terminal'
+      and (buf_name:match("claude") or buf_name:match("gemini") or buf_name:match("codex")) then
       vim.wo.number = true
       vim.wo.relativenumber = true
       vim.wo.wrap = true

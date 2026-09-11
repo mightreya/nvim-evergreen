@@ -1,39 +1,49 @@
+local languages = {
+  "bash",
+  "c",
+  "cpp",
+  "c_sharp",
+  "css",
+  "glsl",
+  "go",
+  "html",
+  "javascript",
+  "json",
+  "lua",
+  "python",
+  "rust",
+  "swift",
+  "typescript",
+  "wgsl",
+  "yaml",
+}
+
 return {
   {
     "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
+    branch = "main",
+    lazy = false,
+    build = function()
+      require("nvim-treesitter").install(languages):wait(300000)
+    end,
     dependencies = {
       "windwp/nvim-ts-autotag",
     },
     config = function()
-      local parser_config = require('nvim-treesitter.parsers').get_parser_configs()
-      parser_config.wgsl = {
-        install_info = {
-          url = "https://github.com/szebniok/tree-sitter-wgsl",
-          files = {"src/parser.c", "src/scanner.c"},
-          branch = "main",
-        },
-        filetype = "wgsl",
-      }
+      require("nvim-treesitter").setup()
+      require("nvim-ts-autotag").setup()
 
-      require('nvim-treesitter.configs').setup {
-        ensure_installed = {
-          "bash", "c", "cpp", "c_sharp", "css", "go", "html", "javascript",
-          "json", "lua", "python", "rust", "swift", "typescript", "yaml", "glsl", "wgsl"
-        },
-        highlight = {
-          enable = true,
-        },
-        autotag = {
-          enable = true,
-        },
-      }
+      vim.api.nvim_create_autocmd("FileType", {
+        callback = function()
+          pcall(vim.treesitter.start)
+        end,
+      })
 
       vim.filetype.add({
         extension = {
           wgsl = "wgsl",
         },
       })
-    end
+    end,
   },
 }

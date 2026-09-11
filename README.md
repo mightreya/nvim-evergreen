@@ -4,23 +4,19 @@ Modern Neovim configuration with LSP, AI assistants, and efficient workflows.
 
 ## Prerequisites
 
-- Neovim 0.10+
+- Neovim 0.12+
 - Git
 - Node.js (for LSP servers)
+- [uv](https://docs.astral.sh/uv/) and Ruff for Python tooling
+- tree-sitter-cli 0.26.1+ and a C compiler (for Tree-sitter parsers)
 - [Claude CLI](https://claude.com/cli)
 - [Gemini CLI](https://github.com/marcinjahn/gemini-cli) (optional)
+- [Codex CLI](https://developers.openai.com/codex/cli/) and `jq` (for Codex diff previews)
 
 ## Installation
 
 ```sh
-# Backup existing config
-mv ~/.config/nvim ~/.config/nvim.backup
-
-# Clone this repo
-git clone https://github.com/mightreya/nvim-evergreen.git ~/.config/nvim
-
-# Open Neovim - plugins auto-install via lazy.nvim
-nvim
+[ ! -d ~/.config/nvim ] || mv ~/.config/nvim ~/.config/nvim.backup.$(date +%s); git clone https://github.com/mightreya/nvim-evergreen.git ~/.config/nvim && nvim
 ```
 
 ## Features
@@ -28,6 +24,7 @@ nvim
 ### AI Integration
 - **Claude Code** - Native terminal integration with context-aware coding assistance
 - **Gemini CLI** - Alternative AI assistant support
+- **Codex** - Persistent native terminal, file/selection context, and code-preview diffs
 
 ### Core
 - LSP via Mason and nvim-lspconfig
@@ -51,15 +48,37 @@ nvim
 
 ## Key Bindings
 
-### Claude Code
-- `<leader>ac` - Toggle Claude terminal
-- `<leader>af` - Focus Claude terminal
-- `<leader>ab` - Add current buffer to Claude
-- `<leader>as` - Send visual selection to Claude
-- `<leader>aa` - Accept diff
-- `<leader>ad` - Deny diff
+The leader is comma. Claude Code is the primary assistant under `,a`; Codex uses
+the matching `,c` namespace where the plugins support the same action.
+
+### AI assistants
+
+| Action | Claude Code | Codex |
+| --- | --- | --- |
+| Toggle terminal | `,ac` | `,cc` |
+| Focus or hide | `,af` | `,cf` |
+| Resume a session | `,aR` | `,cR` |
+| Continue latest session | `,aC` | `,cC` |
+| Add current buffer | `,ab` | `,cb` |
+| Add visual selection | `,as` | `,cs` |
+| Ask with context | — | `,ca` |
+| Edit visual selection | — | `,ce` |
+| Accept diff | `,aa` | In Codex terminal |
+| Deny diff | `,ad` | In Codex terminal |
+| Add directory tree | `,at` | `,ct` |
+| Review changes | `,ar` | `,cr` |
+| Select model | `,am` | In Codex terminal |
+| Stop process | — | `,cx` |
+| Show status | `,aS` | `,cS` |
+| Close edit previews | — | `,cq` |
+
+For Codex, run `codex login`, restart Neovim, and press `,cc`. Optional native
+edit previews can be enabled per machine with `:CodePreviewInstallCodexCliHooks`;
+restart Codex after installing the hooks. Neovim starts Codex with the sandboxed
+`--approve-for-me` mode. Esc remains available to Codex; Ctrl-/ hides its panel.
 
 ### General
+
 - `<leader>ff` - Find files
 - `<leader>fg` - Live grep
 - `<leader>fb` - Browse buffers
