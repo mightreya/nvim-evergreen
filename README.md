@@ -4,9 +4,11 @@ Modern Neovim configuration with LSP, AI assistants, and efficient workflows.
 
 ## Prerequisites
 
-- Neovim 0.12+ (required by the Codex integration)
+- Neovim 0.12+
 - Git
 - Node.js (for LSP servers)
+- [uv](https://docs.astral.sh/uv/) and Ruff for Python tooling
+- tree-sitter-cli 0.26.1+ and a C compiler (for Tree-sitter parsers)
 - [Claude CLI](https://claude.com/cli)
 - [Gemini CLI](https://github.com/marcinjahn/gemini-cli) (optional)
 - [Codex CLI](https://developers.openai.com/codex/cli/) and `jq` (for Codex diff previews)
@@ -97,8 +99,9 @@ Run `:checkhealth codex` and `:CodePreviewStatus` to diagnose the integration.
 [code-preview.nvim](https://github.com/Cannon07/code-preview.nvim) opens native
 side-by-side previews for supported Codex edits. **Accept or reject in the Codex
 terminal.** The plugin has no Lua accept/reject API. Acceptance closes the preview;
-after rejection, use `,cq` if it remains open. Shell redirection writes are not
-previewed, so this is not a gate covering every possible filesystem change.
+after rejection, use `,cq` if it remains open. Apply-patch edits and common shell
+writes are previewed, but the hook is not a gate covering every possible
+filesystem change.
 
 Install hooks with `:CodePreviewInstallCodexCliHooks` in a project's root, then
 restart Codex. This merges entries into `.codex/hooks.json`. For all projects,
@@ -108,26 +111,30 @@ plugin installation, so install them separately on each machine. Approve the
 hook trust prompt if Codex presents one. Only Codex hooks are needed; keep the
 existing Claude integration's own diff handling.
 
-Neovim-launched Codex uses `--sandbox read-only --ask-for-approval on-request`
-so edits can pause for review. Your ordinary CLI configuration is unchanged.
-For automatic operation, change `cmd` in `lua/plugins/codex.lua` to
-`{ "codex", "--approve-for-me" }`; previews will no longer provide a manual
-approval pause. Save your buffers before asking Codex to edit them; Neovim's
-existing `checktime` autocmd reloads saved buffers on focus/buffer changes.
+Neovim-launched Codex uses `--approve-for-me`. It can edit the workspace and
+run routine commands without stopping, while a separate reviewer handles eligible
+requests to cross the sandbox boundary. The reviewer may reject a request and
+Codex may still need your input. This does not enable full access. Diff previews
+remain useful for inspection, but they are not an approval gate in this mode.
+Your ordinary CLI configuration is unchanged. Save buffers before asking Codex
+to edit them; the existing `checktime` autocmd reloads saved buffers on focus or
+buffer changes.
 
 #### Set up Codex on another machine
 
 1. Install Neovim **0.12+**, `jq`, and the Codex CLI. On macOS:
 
    ```sh
-   brew install neovim jq
+   brew install neovim jq tree-sitter-cli
    brew install --cask codex
+   uv tool install ruff
    ```
 
-   On Linux, install a Neovim 0.12+ release and `jq` using your system's package
-   manager or upstream releases. Install a native Codex release, or use
-   `npm install -g @openai/codex`. npm distributes the native binary; Node is
-   only needed for that installation/launcher method.
+   On Linux, install Neovim 0.12+, `jq`, tree-sitter-cli 0.26.1+, a C compiler,
+   uv, and Ruff using your system's package manager or upstream releases.
+   Install a native Codex release, or use `npm install -g @openai/codex`. npm
+   distributes the native binary; Node is only needed for that
+   installation/launcher method.
 
 2. Clone this configuration, open Neovim, and run `:Lazy restore` to install
    the versions pinned in `lazy-lock.json`. Restart Neovim.
@@ -153,16 +160,22 @@ existing `checktime` autocmd reloads saved buffers on focus/buffer changes.
 After installing the plugins, run this from the repository root:
 
 ```sh
+nvim --headless -i NONE '+luafile tests/config.lua'
 nvim --headless -u NONE -i NONE -l tests/codex.lua
+nvim --headless -i NONE '+luafile tests/treesitter.lua'
 ```
 
-The smoke test uses temporary files and a local echo process, requiring no
-authentication or model calls. It checks terminal startup/hide/reopen, project
-root detection, width/styling, terminal and selection keys, hook installation,
+The configuration test verifies startup, plugin load behavior, keymaps, automatic
+Codex review mode, and formatter scope. The Codex smoke test uses temporary files
+and a local echo process, so it requires no authentication or model calls. It
+checks terminal startup/hide/reopen, project root detection, width/styling,
+terminal and selection keys, hook installation,
 edit/new-file previews, and cleanup. It does not exercise model generation or
 the CLI's interactive approval/trust prompts. For a live check, open a scratch
 Git repository with `,cc`, request a small edit, and verify both acceptance
-and rejection through the Codex terminal.
+and rejection through the Codex terminal. The Tree-sitter test parses a sample
+for every configured language and reproduces the Markdown fenced-code path that
+previously raised a scheduled `LanguageTree` callback error.
 
 ## Configuration Structure
 

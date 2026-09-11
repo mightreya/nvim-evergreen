@@ -1,10 +1,15 @@
 return {
   {
     "marcinjahn/gemini-cli.nvim",
-    dependencies = { 
+    dependencies = {
       "nvim-lua/plenary.nvim",
       "nvim-telescope/telescope.nvim",
-      "folke/snacks.nvim"
+      {
+        "folke/snacks.nvim",
+        lazy = false,
+        priority = 1000,
+        opts = {},
+      },
     },
     lazy = false,
     keys = {

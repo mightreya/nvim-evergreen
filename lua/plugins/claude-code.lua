@@ -52,7 +52,7 @@ return {
         end
         
         -- Check if buffer was modified
-        local is_modified = vim.api.nvim_buf_get_option(current_buf, "modified")
+        local is_modified = vim.bo[current_buf].modified
         
         if is_modified then
           -- Get the modified content as review
@@ -104,7 +104,7 @@ return {
         -- Fallback: scan windows for any terminal buffer whose name contains "claude"
         for _, win in ipairs(vim.api.nvim_list_wins()) do
           local buf = vim.api.nvim_win_get_buf(win)
-          if vim.api.nvim_buf_get_option(buf, 'buftype') == 'terminal' then
+          if vim.bo[buf].buftype == 'terminal' then
             local name = vim.api.nvim_buf_get_name(buf)
             if name:match('claude') then
               return win

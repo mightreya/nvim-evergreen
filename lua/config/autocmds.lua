@@ -70,11 +70,11 @@ autocmd("BufReadCmd", {
 })
 
 -- Neoformat helper function
-_G.try_format = function()
-    local succeeded, result = pcall(vim.cmd, 'Neoformat')
-    if not succeeded then
-        print('Formatter not defined for this filetype, saving without formatting.')
-    end
+local function _try_format()
+  local succeeded = pcall(vim.cmd, "Neoformat")
+  if not succeeded then
+    vim.notify("Formatter not defined for this filetype, saving without formatting.", vim.log.levels.INFO)
+  end
 end
 
 -- Format non-Python files with Neoformat on save
@@ -83,8 +83,8 @@ autocmd("BufWritePre", {
   group = "NonPythonFormatting",
   pattern = "*",
   callback = function()
-    if vim.bo.filetype ~= 'python' then
-      _G.try_format()
+    if vim.bo.buftype == "" and vim.bo.modifiable and vim.bo.filetype ~= "python" then
+      _try_format()
     end
   end,
 })

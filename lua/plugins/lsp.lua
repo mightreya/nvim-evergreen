@@ -42,8 +42,12 @@ return {
           vim.keymap.set('n', '<leader>ai', vim.lsp.buf.code_action, opts)
           vim.keymap.set('n', '<leader>lf', vim.lsp.buf.format, opts)
           vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-          vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
-          vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
+          vim.keymap.set('n', ']d', function()
+            vim.diagnostic.jump({ count = 1 })
+          end, opts)
+          vim.keymap.set('n', '[d', function()
+            vim.diagnostic.jump({ count = -1 })
+          end, opts)
         end
       })
 

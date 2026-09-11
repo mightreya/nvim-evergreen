@@ -16,9 +16,7 @@ local function verify()
   local specifications = dofile(repository .. "/lua/plugins/codex.lua")
   local options = vim.deepcopy(specifications[2].opts)
   assert(specifications[2].lazy == false, "Selection mappings must load at startup")
-  assert(vim.deep_equal(options.cmd, {
-    "codex", "--sandbox", "read-only", "--ask-for-approval", "on-request",
-  }))
+  assert(vim.deep_equal(options.cmd, { "codex", "--approve-for-me" }))
   -- A local echo process exercises the terminal without an account or model call.
   options.cmd = { project .. "/codex-smoke" }
   require("code-preview").setup(specifications[1].opts)

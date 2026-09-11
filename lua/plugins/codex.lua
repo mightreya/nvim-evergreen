@@ -25,8 +25,7 @@ return {
     },
     opts = {
       backend = "terminal",
-      -- Preview approvals apply only to Codex launched by this integration.
-      cmd = { "codex", "--sandbox", "read-only", "--ask-for-approval", "on-request" },
+      cmd = { "codex", "--approve-for-me" },
       cwd = "root",
       focus_after_send = true,
       selection = {
