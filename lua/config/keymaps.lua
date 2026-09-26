@@ -67,3 +67,4 @@ map('n', '<leader>wn', ':e ~/wiki/notes/index.md<CR>', { noremap = true, silent 
 map('n', '<leader>wo', ':e ~/wiki/ozarika/index.md<CR>', { noremap = true, silent = true, desc = 'Open Ozarika wiki' })
 map('n', '<leader>ws', ':e ~/wiki/sc/index.md<CR>', { noremap = true, silent = true, desc = 'Open SC wiki' })
 map('n', '<leader>wp', ':e ~/wiki/spectra/index.md<CR>', { noremap = true, silent = true, desc = 'Open Spectra wiki' })
+map('n', '<leader>wk', ':e ~/wiki/strikta/index.md<CR>', { noremap = true, silent = true, desc = 'Open Strikta wiki' })
