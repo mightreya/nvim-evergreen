@@ -72,6 +72,11 @@ the matching `,c` namespace where the plugins support the same action.
 | Show status | `,aS` | `,cS` |
 | Close edit previews | — | `,cq` |
 
+After a reboot, tmux-resurrect restarts Neovim with `NVIM_CLAUDE_CONTINUE=1`, and each pane
+resumes its own Claude conversation (`lua/config/claude_resume.lua`). The Claude Code
+SessionStart/SessionEnd hook `claude-pane-record` keeps one record per tmux pane in
+`~/.local/state/claude-pane`; `/exit` removes it. Test: `nvim --headless --clean -l tests/claude_resume.lua`.
+
 For Codex, run `codex login`, restart Neovim, and press `,cc`. Optional native
 edit previews can be enabled per machine with `:CodePreviewInstallCodexCliHooks`;
 restart Codex after installing the hooks. Neovim starts Codex with the sandboxed
