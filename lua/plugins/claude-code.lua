@@ -42,7 +42,7 @@ return {
       map('n', '<leader>aS', '<cmd>ClaudeCodeStatus<cr>', { noremap = true, silent = true, desc = 'Claude Code status' })
 
       -- After a reboot, resume the Claude conversation tmux-resurrect restored this pane for
-      require('config.claude_resume').setup()
+      require('config.resume').setup()
       
       -- Code review workflow: send modified diff as review and then deny
       map('n', '<leader>ar', function()
