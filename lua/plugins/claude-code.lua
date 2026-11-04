@@ -40,6 +40,9 @@ return {
       map('n', '<leader>am', '<cmd>ClaudeCodeSelectModel<cr>', { noremap = true, silent = true, desc = 'Select Claude model' })
       map('n', '<leader>at', '<cmd>ClaudeCodeTreeAdd .<cr>', { noremap = true, silent = true, desc = 'Add directory tree to Claude' })
       map('n', '<leader>aS', '<cmd>ClaudeCodeStatus<cr>', { noremap = true, silent = true, desc = 'Claude Code status' })
+
+      -- After a reboot, resume the Claude conversation tmux-resurrect restored this pane for
+      require('config.resume').setup()
       
       -- Code review workflow: send modified diff as review and then deny
       map('n', '<leader>ar', function()
